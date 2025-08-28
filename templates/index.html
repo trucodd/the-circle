@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The Circle</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .hero { text-align: center; margin: 50px 0; }
+        .form-group { margin: 20px 0; }
+        input, select, button { padding: 10px; margin: 5px; font-size: 16px; }
+        button { background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0; }
+        .feature { padding: 20px; border: 1px solid #ddd; border-radius: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🌍 Join a circle</h1>
+        <p>People from anywhere.Thoughts in every language.One circle</p>
+    </div>
+
+    <div style="text-align: center; margin: 40px 0;">
+        <h2>Enter</h2>
+        
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Your Name" required>
+        </div>
+        
+        <div class="form-group">
+            <select id="language">
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="ja">Japanese</option>
+                <option value="hi">Hindi</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <input type="text" id="roomId" placeholder="Circle ID" required>
+        </div>
+        
+        <button onclick="joinCircle()">Join a Circle</button>
+        <button onclick="startCircle()">Start a Circle</button>
+    </div>
+
+    <script>
+        function startCircle() {
+            const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
+            document.getElementById('roomId').value = roomId;
+        }
+
+        function joinCircle() {
+            const username = document.getElementById('username').value;
+            const language = document.getElementById('language').value;
+            const roomId = document.getElementById('roomId').value;
+            
+            if (!username || !roomId) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            window.location.href = `/room/${roomId}?username=${username}&language=${language}`;
+        }
+    </script>
+</body>
+</html>

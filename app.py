@@ -86,8 +86,8 @@ def index():
 def room(room_id):
     return render_template('room.html', room_id=room_id)
 
-@socketio.on('join_meeting')
-def handle_join_meeting(data):
+@socketio.on('join_circle')
+def handle_join_circle(data):
     room_id = data['room_id']
     username = data['username']
     language = data['language']
@@ -233,7 +233,23 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                     }, room=target_user['sid'])
                     
         except Exception as e:
-            print(f"Dubbing error: {e}")
+            error_str = str(e)
+            print(f"[DUBBING] Full error: {error_str}")
+            
+            # Check for specific Murf API errors
+            if "INSUFFICIENT_CREDITS" in error_str:
+                print("[DUBBING] Error: Insufficient credits")
+            elif "CREDITS_EXHAUSTED" in error_str:
+                print("[DUBBING] Error: Credits exhausted")
+            elif "LANGUAGE_NOT_SUPPORTED" in error_str:
+                print("[DUBBING] Error: Language not supported")
+            elif "SPEECH_NOT_PRESENT" in error_str:
+                print("[DUBBING] Error: No speech detected")
+            elif "SOURCE_LANGUAGE_MISMATCH" in error_str:
+                print("[DUBBING] Error: Source language mismatch")
+            elif "SERVER_ERROR" in error_str:
+                print("[DUBBING] Error: Server error")
+            
             handle_murf_error(e, speaker_name, target_user['sid'])
         finally:
             if temp_file_path and os.path.exists(temp_file_path):
@@ -368,4 +384,4 @@ def handle_get_pending_jobs():
     emit('pending_jobs_list', {'jobs': user_jobs})
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
