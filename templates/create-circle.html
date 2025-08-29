@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Circle - The Circle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #64ffda;
+            color: #64ffda;
+        }
+        .btn-outline:hover { background: #64ffda; color: #1e1e2e; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        .create-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .create-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .form-card {
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .form-group { margin: 25px 0; }
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: #64ffda;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            font-size: 16px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #64ffda;
+            background: rgba(255,255,255,0.15);
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #888; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .image-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .image-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 25px;
+            background: var(--selected-color, linear-gradient(45deg, #64ffda, #ff6b9d));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 3px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        .image-preview:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 22px;
+        }
+        .upload-btn {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #64ffda;
+            color: #64ffda;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-btn:hover {
+            background: #64ffda;
+            color: #1e1e2e;
+        }
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+        .color-option.selected {
+            border-color: white;
+            transform: scale(1.15);
+        }
+        .circle-id {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 15px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 18px;
+            color: #64ffda;
+            border: 2px solid rgba(100, 255, 218, 0.3);
+        }
+        .btn-large {
+            width: 100%;
+            padding: 18px;
+            margin: 20px 0 10px 0;
+            border: none;
+            border-radius: 20px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #64ffda 0%, #ff6b9d 100%);
+            color: white;
+            font-weight: 600;
+        }
+        .btn-large:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .hidden { display: none; }
+        @media (max-width: 768px) {
+            .create-header h1 { font-size: 2.2em; }
+            .form-card { padding: 30px 20px; }
+            .color-picker { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🌍 The Circle</div>
+        <div>
+            <button class="btn btn-outline" onclick="window.location.href='/dashboard'">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="create-header">
+            <h1>Create Your Circle</h1>
+            <p>Design your unique space for conversations</p>
+        </div>
+
+        <div class="form-card">
+            <form id="createCircleForm">
+                <div class="form-group">
+                    <label>Circle Name</label>
+                    <input type="text" id="circleName" placeholder="Enter circle name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="circleDescription" placeholder="What's your circle about?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Circle Image or Color</label>
+                    <div class="image-upload">
+                        <div class="image-preview" id="imagePreview" onclick="document.getElementById('imageInput').click()">
+                            <span id="previewText">🌍</span>
+                        </div>
+                        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                            Upload Image
+                        </button>
+                        <p style="opacity: 0.7; text-align: center;">Or choose a color below</p>
+                        <div class="color-picker">
+                            <div class="color-option" style="background: linear-gradient(45deg, #ff6b9d, #ff8a80);" onclick="selectColor('#ff6b9d', '💖')"></div>
+                            <div class="color-option" style="background: linear-gradient(45deg, #64ffda, #81c784);" onclick="selectColor('#64ffda', '🌊')"></div>
+                            <div class="color-option" style="background: linear-gradient(45deg, #c471ed, #ba68c8);" onclick="selectColor('#c471ed', '🔮')"></div>
+                            <div class="color-option" style="background: linear-gradient(45deg, #ff8a80, #ffab91);" onclick="selectColor('#ff8a80', '🔥')"></div>
+                            <div class="color-option" style="background: linear-gradient(45deg, #81c784, #aed581);" onclick="selectColor('#81c784', '🌱')"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="form-group">
+                    <label>Circle ID (Auto-generated)</label>
+                    <div class="circle-id" id="circleId">circle-xxxxxxxxx</div>
+                </div>
+
+                <button type="submit" class="btn-large">Create Circle</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedColor = '#64ffda';
+        let selectedEmoji = '🌍';
+        let uploadedImage = null;
+
+        // Generate circle ID on page load
+        function generateCircleId() {
+            const id = 'circle-' + Math.random().toString(36).substr(2, 9);
+            document.getElementById('circleId').textContent = id;
+            return id;
+        }
+
+        function selectColor(color, emoji) {
+            selectedColor = color;
+            selectedEmoji = emoji;
+            uploadedImage = null;
+            
+            // Update preview
+            const preview = document.getElementById('imagePreview');
+            const previewText = document.getElementById('previewText');
+            
+            preview.style.setProperty('--selected-color', `linear-gradient(45deg, ${color}, ${color}aa)`);
+            preview.innerHTML = `<span id="previewText">${emoji}</span>`;
+            
+            // Update selected color option
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImage = e.target.result;
+                    const preview = document.getElementById('imagePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Circle image">`;
+                    
+                    // Clear color selection
+                    document.querySelectorAll('.color-option').forEach(option => {
+                        option.classList.remove('selected');
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        document.getElementById('createCircleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const circleName = document.getElementById('circleName').value;
+            const circleDescription = document.getElementById('circleDescription').value;
+            const primaryLanguage = 'en'; // Default language
+            const circleId = document.getElementById('circleId').textContent;
+            
+            if (!circleName) {
+                alert('Please enter a circle name');
+                return;
+            }
+            
+            // Create circle data
+            const circleData = {
+                id: circleId,
+                name: circleName,
+                description: circleDescription,
+                language: 'multi', // Multi-language circle
+                image: uploadedImage,
+                color: uploadedImage ? null : selectedColor,
+                emoji: uploadedImage ? null : selectedEmoji,
+                createdAt: new Date().toISOString(),
+                isOwner: true
+            };
+            
+            // Save to user's circles
+            let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+            joinedRooms.push(circleData);
+            localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
+            
+            // Redirect to the new circle
+            const userName = localStorage.getItem('userName') || 'User';
+            window.location.href = `/chat/${circleId}?username=${userName}&language=${primaryLanguage}`;
+        });
+
+        // Initialize
+        generateCircleId();
+        selectColor('#64ffda', '🌍'); // Set default selection
+    </script>
+</body>
+</html>

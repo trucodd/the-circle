@@ -86,6 +86,27 @@ def index():
 def room(room_id):
     return render_template('room.html', room_id=room_id)
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+@app.route('/create-circle')
+def create_circle():
+    return render_template('create-circle.html')
+
+@app.route('/chat/<room_id>')
+def chat_room(room_id):
+    # Get room data from URL params or default values
+    room_name = f"Circle {room_id.split('-')[-1]}"
+    circle_color = "#64ffda"
+    circle_emoji = "🌍"
+    
+    return render_template('chat-room.html', 
+                         room_id=room_id,
+                         room_name=room_name,
+                         circle_color=circle_color,
+                         circle_emoji=circle_emoji)
+
 @socketio.on('join_circle')
 def handle_join_circle(data):
     room_id = data['room_id']
@@ -150,63 +171,65 @@ def handle_meeting_audio(data):
     room_id = data['room_id']
     audio_data = data['audio']
     speaker_name = data['username']
+    source_language = data.get('source_language', 'en')
     
     user_info = user_sessions.get(request.sid)
     if not user_info:
         return
     
-    speaker_language = user_info['language']
+    # Validate audio data
+    if not audio_data or len(audio_data) < 100:
+        socketio.emit('error', {'message': 'Audio data too short or empty'}, room=request.sid)
+        return
+    
     timestamp = datetime.now().isoformat()
+    message_id = f"msg_{int(datetime.now().timestamp() * 1000)}"
     
-    room_users = active_rooms.get(room_id, [])
+    print(f"[AUDIO] Received audio from {speaker_name}, size: {len(audio_data)} chars")
     
-    for user in room_users:
-        if user['sid'] != request.sid:
-            if user['language'] == speaker_language:
-                socketio.emit('voice_message', {
-                    'speaker': speaker_name,
-                    'audio_data': audio_data,
-                    'language': speaker_language,
-                    'timestamp': timestamp
-                }, room=user['sid'])
-            else:
-                process_dubbing_for_user(audio_data, speaker_name, speaker_language, user)
+    # Send original voice message to all users in the room
+    socketio.emit('voice_message', {
+        'speaker': speaker_name,
+        'audio_data': audio_data,
+        'language': source_language,
+        'timestamp': timestamp,
+        'message_id': message_id,
+        'source_language': source_language,
+        'format': data.get('format', 'audio/webm')
+    }, room=room_id)
 
-def process_dubbing_for_user(audio_data, speaker_name, source_language, target_user):
-    # Emit queued status immediately
-    print(f"[DUBBING] Queuing translation for {speaker_name} -> {target_user['language']}")
+def process_dubbing_for_user(audio_data, speaker_name, source_language, target_user, message_id=None):
+    if not murf_client:
+        socketio.emit('dubbing_error', {
+            'error': 'Service unavailable',
+            'speaker': speaker_name
+        }, room=target_user['sid'])
+        return
+    
     socketio.emit('dubbing_status', {
-        'status': 'queued',
-        'message': f'Queuing translation for {speaker_name}...',
+        'status': 'processing',
+        'message': f'Translating {speaker_name}\'s voice...',
         'speaker': speaker_name
     }, room=target_user['sid'])
     
     def create_dubbing():
         temp_file_path = None
         try:
-            if not murf_client:
-                socketio.emit('dubbing_error', {
-                    'error': 'Translation service not available',
-                    'speaker': speaker_name
-                }, room=target_user['sid'])
-                return
-                
-            if murf_client:
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                    temp_file_path = temp_file.name
-                    audio_bytes = base64.b64decode(audio_data)
-                    temp_file.write(audio_bytes)
-                    temp_file.flush()
-                
-                target_locale = LANGUAGE_MAP.get(target_user['language'], 'en_US')
-                
-                with open(temp_file_path, "rb") as audio_file:
-                    response = murf_client.dubbing.jobs.create(
-                        target_locales=[target_locale],
-                        file_name=f"voice_{speaker_name}_{int(datetime.now().timestamp())}",
-                        file=audio_file,
-                        priority="HIGH"
-                    )
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                temp_file_path = temp_file.name
+                audio_bytes = base64.b64decode(audio_data)
+                temp_file.write(audio_bytes)
+                temp_file.flush()
+            
+            target_locale = LANGUAGE_MAP.get(target_user['language'], 'en_US')
+            
+            with open(temp_file_path, "rb") as audio_file:
+                response = murf_client.dubbing.jobs.create(
+                    target_locales=[target_locale],
+                    file_name=f"voice_{speaker_name}_{int(datetime.now().timestamp())}",
+                    file=audio_file,
+                    priority="HIGH"
+                )
                 
                 if hasattr(response, 'job_id'):
                     pending_jobs[response.job_id] = {
@@ -214,7 +237,8 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                         'speaker_name': speaker_name,
                         'target_language': target_user['language'],
                         'status': 'processing',
-                        'created_at': datetime.now().isoformat()
+                        'created_at': datetime.now().isoformat(),
+                        'message_id': message_id
                     }
                     
                     print(f"[DUBBING] Job created: {response.job_id} for {speaker_name}")
@@ -233,24 +257,10 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                     }, room=target_user['sid'])
                     
         except Exception as e:
-            error_str = str(e)
-            print(f"[DUBBING] Full error: {error_str}")
-            
-            # Check for specific Murf API errors
-            if "INSUFFICIENT_CREDITS" in error_str:
-                print("[DUBBING] Error: Insufficient credits")
-            elif "CREDITS_EXHAUSTED" in error_str:
-                print("[DUBBING] Error: Credits exhausted")
-            elif "LANGUAGE_NOT_SUPPORTED" in error_str:
-                print("[DUBBING] Error: Language not supported")
-            elif "SPEECH_NOT_PRESENT" in error_str:
-                print("[DUBBING] Error: No speech detected")
-            elif "SOURCE_LANGUAGE_MISMATCH" in error_str:
-                print("[DUBBING] Error: Source language mismatch")
-            elif "SERVER_ERROR" in error_str:
-                print("[DUBBING] Error: Server error")
-            
-            handle_murf_error(e, speaker_name, target_user['sid'])
+            socketio.emit('dubbing_error', {
+                'error': 'Dubbing service unavailable',
+                'speaker': speaker_name
+            }, room=target_user['sid'])
         finally:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
@@ -286,7 +296,8 @@ def poll_job_status(job_id):
                                     socketio.emit('translated_audio', {
                                         'audio_data': audio_base64,
                                         'speaker': job_info['speaker_name'],
-                                        'target_language': job_info['target_language']
+                                        'target_language': job_info['target_language'],
+                                        'message_id': job_info.get('message_id')
                                     }, room=job_info['user_sid'])
                                 else:
                                     socketio.emit('dubbing_error', {
@@ -382,6 +393,20 @@ def handle_get_pending_jobs():
             })
     
     emit('pending_jobs_list', {'jobs': user_jobs})
+
+@socketio.on('request_dub')
+def handle_request_dub(data):
+    message_id = data['message_id']
+    target_language = data['target_language']
+    audio_data = data['audio_data']
+    speaker_name = data['speaker_name']
+    source_language = data['source_language']
+    
+    # Process dubbing for the requesting user only
+    process_dubbing_for_user(audio_data, speaker_name, source_language, {
+        'sid': request.sid,
+        'language': target_language
+    }, message_id)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

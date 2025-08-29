@@ -130,24 +130,24 @@
             addMessage(`${data.speaker} (${time})`, data.text);
         });
 
-        // Handle voice messages (original and translated)
+        // Handle voice messages (original only)
         socket.on('voice_message', function(data) {
             const time = new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const errorText = data.error ? ` - ${data.error}` : '';
-            addMessage(`🎙️ ${data.speaker}`, `Voice message (${time})${errorText}`);
+            const isOwnMessage = data.speaker === username;
+            const dubButton = isOwnMessage ? '' : `<button onclick="requestDub('${data.message_id}', '${data.audio_data}', '${data.speaker}', '${data.source_language}')" style="background: #28a745; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-left: 10px; font-size: 12px;">🎯 Dub</button>`;
             
-            // Play audio directly
-            if (data.audio_data) {
-                const audio = new Audio('data:audio/wav;base64,' + data.audio_data);
-                audio.play().catch(e => console.log('Audio play failed:', e));
-            }
+            // Store audio data globally for playback
+            window.audioMessages = window.audioMessages || {};
+            window.audioMessages[data.message_id] = data.audio_data;
+            
+            addMessage(`🎙️ ${data.speaker}`, `Voice message (${time}) <button onclick="playVoiceMessage('${data.message_id}')" style="background: #007bff; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 12px;">▶️ Play</button>${dubButton}`);
         });
         
         // Handle translated audio from dubbing API
         socket.on('translated_audio', function(data) {
             if (data.audio_data) {
-                const playButton = `<button onclick="playAudio('data:audio/wav;base64,${data.audio_data}')" style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">▶️ Play</button>`;
-                addMessage(`🎙️ ${data.speaker}`, `Translated voice message ${playButton}`);
+                const playButton = `<button onclick="playAudio('data:audio/wav;base64,${data.audio_data}')" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">▶️ Play Dubbed</button>`;
+                addMessage(`🎯 ${data.speaker} (Dubbed)`, `Voice translated to your language ${playButton}`);
             }
         });
         
@@ -163,11 +163,33 @@
             }
         });
         
-        // Function to play audio when button is clicked
+        // Function to play voice message
+        function playVoiceMessage(messageId) {
+            const audioData = window.audioMessages[messageId];
+            if (audioData) {
+                const audio = new Audio('data:audio/wav;base64,' + audioData);
+                audio.play();
+            }
+        }
+        
+        // Function to play dubbed audio
         function playAudio(audioSrc) {
             const audio = new Audio(audioSrc);
             audio.volume = 0.8;
             audio.play().catch(e => console.log('Audio play failed:', e));
+        }
+        
+        // Function to request dubbing
+        function requestDub(messageId, audioData, speakerName, sourceLanguage) {
+            addMessage('System', `🔄 Requesting translation for ${speakerName}'s message...`);
+            
+            socket.emit('request_dub', {
+                message_id: messageId,
+                target_language: language,
+                audio_data: audioData,
+                speaker_name: speakerName,
+                source_language: sourceLanguage
+            });
         }
         
         // Handle dubbing errors
@@ -179,6 +201,8 @@
         socket.on('dubbing_status', function(data) {
             if (data.status === 'processing') {
                 addMessage('System', `🔄 ${data.message}`);
+            } else if (data.status === 'queued') {
+                addMessage('System', `⏳ ${data.message}`);
             }
         });
 
@@ -248,21 +272,20 @@
                 mediaRecorder.onstop = () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
                     
-                    // Convert to base64 for transmission
                     const reader = new FileReader();
                     reader.onload = function() {
-                        const audioData = reader.result.split(',')[1]; // Remove data:audio/wav;base64,
+                        const audioData = reader.result.split(',')[1];
                         
-                        // Send audio for translation
                         socket.emit('audio_data', {
                             room_id: roomId,
                             username: username,
-                            audio: audioData
+                            audio: audioData,
+                            source_language: language
                         });
                     };
                     reader.readAsDataURL(audioBlob);
                     
-                    addMessage('You', 'Spoke - processing for transcription...');
+                    addMessage('You', 'Voice message sent');
                 };
 
                 mediaRecorder.start();
@@ -273,7 +296,7 @@
                 btn.className = 'record-btn recording';
                 
             } catch (err) {
-                alert('Microphone access required for voice translation');
+                alert('Microphone access required');
             }
         }
 

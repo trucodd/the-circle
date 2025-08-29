@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - The Circle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .profile-pic {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #64ffda, #ff6b9d);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .dashboard-header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .rooms-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        .room-card {
+            background: rgba(255,255,255,0.05);
+            padding: 30px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(255,255,255,0.1);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .room-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-color);
+        }
+        .circle-widget {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            margin-bottom: 15px;
+            background: var(--accent-color);
+            overflow: hidden;
+        }
+        .circle-widget img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 17px;
+        }
+        .room-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .room-card.pink { --accent-color: #ff6b9d; }
+        .room-card.green { --accent-color: #64ffda; }
+        .room-card.purple { --accent-color: #c471ed; }
+        .room-card.orange { --accent-color: #ff8a80; }
+        .room-card.blue { --accent-color: #81c784; }
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .room-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-bottom: 5px;
+        }
+        .room-id {
+            font-size: 0.9em;
+            opacity: 0.7;
+            font-family: monospace;
+        }
+        .room-meta {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        .room-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-small {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .btn-join {
+            background: linear-gradient(45deg, var(--accent-color), rgba(255,255,255,0.2));
+            color: white;
+        }
+        .btn-leave {
+            background: rgba(255,255,255,0.1);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+        .btn-small:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            opacity: 0.6;
+        }
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30,30,46,0.95);
+            padding: 40px;
+            border-radius: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            min-width: 400px;
+        }
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #64ffda;
+        }
+        .modal input {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .modal input:focus {
+            outline: none;
+            border: 2px solid #64ffda;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        @media (max-width: 768px) {
+            .rooms-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-header h1 { font-size: 2.2em; }
+            .header { flex-direction: column; gap: 15px; }
+            .rooms-header { flex-direction: column; gap: 15px; align-items: stretch; }
+            .modal-content { min-width: 300px; padding: 30px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🌍 The Circle</div>
+        <div class="user-info">
+            <div class="profile-pic" id="profilePic">U</div>
+            <span id="userName">User</span>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h1>Your Dashboard</h1>
+            <p>Manage your circles and connections</p>
+        </div>
+
+
+
+        <div class="rooms-header">
+            <h2>Your Circles</h2>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="window.location.href='/create-circle'">Create Circle</button>
+                <button class="btn btn-outline" onclick="showJoinModal()">Join Circle</button>
+            </div>
+        </div>
+
+        <div class="rooms-grid" id="roomsGrid">
+            <!-- Rooms will be loaded here -->
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h3>No circles joined yet</h3>
+            <p>Start by joining or creating your first circle!</p>
+            <button class="btn" onclick="showJoinModal()" style="margin-top: 20px;">Join Circle</button>
+        </div>
+    </div>
+
+    <!-- Join Circle Modal -->
+    <div class="modal" id="joinModal">
+        <div class="modal-content">
+            <h3>Join Circle</h3>
+            <input type="text" id="circleIdInput" placeholder="Enter Circle ID (e.g., circle-abc123)">
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeJoinModal()">Cancel</button>
+                <button class="btn" onclick="joinCircle()">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check if user is logged in
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/';
+        }
+
+        // Load user info
+        const userName = localStorage.getItem('userName') || localStorage.getItem('userEmail') || 'User';
+        document.getElementById('userName').textContent = userName;
+        document.getElementById('profilePic').textContent = userName.charAt(0).toUpperCase();
+
+        // Load joined rooms
+        function loadRooms() {
+            const joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+            const roomsGrid = document.getElementById('roomsGrid');
+            const emptyState = document.getElementById('emptyState');
+
+            if (joinedRooms.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            roomsGrid.innerHTML = '';
+
+            joinedRooms.forEach((room, index) => {
+                const roomCard = document.createElement('div');
+                const colorClass = ['pink', 'green', 'purple', 'orange', 'blue'][index % 5];
+                const joinedDate = new Date(room.joinedAt).toLocaleDateString();
+                
+                roomCard.className = `room-card ${colorClass}`;
+                const widgetContent = room.image 
+                    ? `<img src="${room.image}" alt="${room.name}">` 
+                    : (room.emoji || '🌍');
+                
+                roomCard.innerHTML = `
+                    <div class="room-header">
+                        <div class="circle-widget" style="background: ${room.color || '#64ffda'}">
+                            ${widgetContent}
+                        </div>
+                        <div>
+                            <div class="room-name">${room.name}</div>
+                            <div class="room-id">${room.id}</div>
+                        </div>
+                    </div>
+                    ${room.description ? `<p style="opacity: 0.8; margin: 10px 0;">${room.description}</p>` : ''}
+                    <div class="room-meta">
+                        <span>🌐 ${room.language.toUpperCase()}</span>
+                        <span>📅 ${joinedDate}</span>
+                        ${room.isOwner ? '<span>👑 Owner</span>' : ''}
+                    </div>
+                    <div class="room-actions">
+                        <button class="btn-small btn-join" onclick="rejoinRoom('${room.id}', '${room.language}')">
+                            ${room.isOwner ? 'Enter Circle' : 'Rejoin Circle'}
+                        </button>
+                        <button class="btn-small btn-leave" onclick="leaveRoom('${room.id}')">
+                            Leave
+                        </button>
+                    </div>
+                `;
+                roomsGrid.appendChild(roomCard);
+            });
+
+
+        }
+
+
+
+        function rejoinRoom(roomId, language) {
+            const username = localStorage.getItem('userName') || 'User';
+            window.location.href = `/chat/${roomId}?username=${username}&language=${language}`;
+        }
+
+        function leaveRoom(roomId) {
+            if (confirm('Are you sure you want to leave this circle?')) {
+                let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+                joinedRooms = joinedRooms.filter(room => room.id !== roomId);
+                localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
+                loadRooms();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/';
+        }
+
+        function showJoinModal() {
+            document.getElementById('joinModal').style.display = 'block';
+            document.getElementById('circleIdInput').focus();
+        }
+
+        function closeJoinModal() {
+            document.getElementById('joinModal').style.display = 'none';
+            document.getElementById('circleIdInput').value = '';
+        }
+
+        function joinCircle() {
+            const circleId = document.getElementById('circleIdInput').value.trim();
+            if (!circleId) {
+                alert('Please enter a Circle ID');
+                return;
+            }
+            
+            const userName = localStorage.getItem('userName') || 'User';
+            const userLanguage = 'en'; // Default language
+            
+            // Add to joined rooms
+            let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+            const existingRoom = joinedRooms.find(room => room.id === circleId);
+            
+            if (!existingRoom) {
+                const newRoom = {
+                    id: circleId,
+                    name: `Circle ${circleId.split('-')[1]}`,
+                    description: '',
+                    language: userLanguage,
+                    color: '#64ffda',
+                    emoji: '🌍',
+                    joinedAt: new Date().toISOString(),
+                    isOwner: false
+                };
+                joinedRooms.push(newRoom);
+                localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
+            }
+            
+            closeJoinModal();
+            window.location.href = `/chat/${circleId}?username=${userName}&language=${userLanguage}`;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('joinModal').onclick = function(e) {
+            if (e.target === this) {
+                closeJoinModal();
+            }
+        };
+
+        // Handle Enter key in input
+        document.getElementById('circleIdInput').onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                joinCircle();
+            }
+        };
+
+        // Load rooms on page load
+        loadRooms();
+    </script>
+</body>
+</html>

@@ -2,52 +2,319 @@
 <html>
 <head>
     <title>The Circle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .hero { text-align: center; margin: 50px 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
+        .auth-buttons { display: flex; gap: 10px; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #64ffda;
+            color: #64ffda;
+        }
+        .btn-outline:hover { background: #64ffda; color: #1e1e2e; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .hero {
+            text-align: center;
+            margin: 60px 0;
+            background: rgba(255,255,255,0.05);
+            padding: 60px 40px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .hero h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p { font-size: 1.2em; opacity: 0.8; }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 40px 0;
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
         .form-group { margin: 20px 0; }
-        input, select, button { padding: 10px; margin: 5px; font-size: 16px; }
-        button { background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 40px 0; }
-        .feature { padding: 20px; border: 1px solid #ddd; border-radius: 10px; text-align: center; }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+            font-size: 16px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #64ffda;
+            background: rgba(255,255,255,0.15);
+        }
+        .form-group input::placeholder { color: #888; }
+        .btn-large {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff6b9d 0%, #ff8a80 100%);
+            color: white;
+        }
+        .btn-large:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30,30,46,0.95);
+            padding: 40px;
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            min-width: 400px;
+            max-width: 90vw;
+        }
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+        }
+        .close:hover { color: #ff6b9d; }
+        @media (max-width: 768px) {
+            .main-content { grid-template-columns: 1fr; }
+            .hero { padding: 40px 20px; }
+            .hero h1 { font-size: 2.5em; }
+            .modal-content { min-width: 300px; padding: 30px; }
+            .header { flex-direction: column; gap: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>🌍 Join a circle</h1>
-        <p>People from anywhere.Thoughts in every language.One circle</p>
+    <div class="header">
+        <div class="logo">🌍 The Circle</div>
+        <div class="auth-buttons">
+            <button class="btn btn-outline" onclick="showLogin()">Login</button>
+            <button class="btn" onclick="showRegister()">Sign Up</button>
+        </div>
     </div>
 
-    <div style="text-align: center; margin: 40px 0;">
-        <h2>Enter</h2>
-        
-        <div class="form-group">
-            <input type="text" id="username" placeholder="Your Name" required>
+    <div class="container">
+        <div class="hero">
+            <h1>Join a Circle</h1>
+            <p>People from anywhere. Thoughts in every language. One circle.</p>
         </div>
-        
-        <div class="form-group">
-            <select id="language">
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="ja">Japanese</option>
-                <option value="hi">Hindi</option>
-            </select>
+
+        <div class="main-content">
+            <div class="card">
+                <h2 style="margin-bottom: 30px; color: #64ffda;">Quick Join</h2>
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <select id="language">
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="ja">Japanese</option>
+                        <option value="hi">Hindi</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="roomId" placeholder="Circle ID" required>
+                </div>
+                <button class="btn-large btn-primary" onclick="joinCircle()">Join Circle</button>
+                <button class="btn-large btn-secondary" onclick="startCircle()">Start New Circle</button>
+            </div>
+
+            <div class="card">
+                <h2 style="margin-bottom: 30px; color: #ff6b9d;">Why The Circle?</h2>
+                <div style="text-align: left;">
+                    <p style="margin: 15px 0; opacity: 0.9;">💬 Instant text chat</p>
+                    <p style="margin: 15px 0; opacity: 0.9;">🎙️ Voice messaging</p>
+                    <p style="margin: 15px 0; opacity: 0.9;">🔒 Secure & private conversations</p>
+                    <p style="margin: 15px 0; opacity: 0.9;">📱 Works on any device</p>
+                    <p style="margin: 15px 0; opacity: 0.9;">🌐 Multi-language support</p>
+                </div>
+            </div>
         </div>
-        
-        <div class="form-group">
-            <input type="text" id="roomId" placeholder="Circle ID" required>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #64ffda;">Login</h2>
+            <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" placeholder="Password" required>
+            </div>
+            <button class="btn-large btn-primary" onclick="login()">Login</button>
+            <p style="text-align: center; margin-top: 20px; opacity: 0.7;">
+                Don't have an account? <a href="#" onclick="showRegister(); closeModal('loginModal');" style="color: #64ffda;">Sign up</a>
+            </p>
         </div>
-        
-        <button onclick="joinCircle()">Join a Circle</button>
-        <button onclick="startCircle()">Start a Circle</button>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2 style="margin-bottom: 30px; color: #ff6b9d;">Sign Up</h2>
+            <div class="form-group">
+                <input type="text" id="registerName" placeholder="Full Name" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="registerEmail" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="registerPassword" placeholder="Password" required>
+            </div>
+            <button class="btn-large btn-primary" onclick="register()">Sign Up</button>
+            <p style="text-align: center; margin-top: 20px; opacity: 0.7;">
+                Already have an account? <a href="#" onclick="showLogin(); closeModal('registerModal');" style="color: #64ffda;">Login</a>
+            </p>
+        </div>
     </div>
 
     <script>
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function showRegister() {
+            document.getElementById('registerModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Check if user exists in registered users
+            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            const user = registeredUsers.find(u => u.email === email && u.password === password);
+            
+            if (!user) {
+                alert('Invalid email or password');
+                return;
+            }
+            
+            // Store user session
+            localStorage.setItem('userName', user.name);
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('isLoggedIn', 'true');
+            
+            closeModal('loginModal');
+            window.location.href = '/dashboard';
+        }
+
+        function register() {
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            
+            if (!name || !email || !password) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Check if user already exists
+            let registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            if (registeredUsers.find(u => u.email === email)) {
+                alert('User with this email already exists');
+                return;
+            }
+            
+            // Add new user to registered users
+            registeredUsers.push({ name, email, password });
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+            
+            // Store user session
+            localStorage.setItem('userName', name);
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('isLoggedIn', 'true');
+            
+            closeModal('registerModal');
+            window.location.href = '/dashboard';
+        }
+
         function startCircle() {
-            const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
-            document.getElementById('roomId').value = roomId;
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                window.location.href = '/create-circle';
+            } else {
+                alert('Please login to create a circle. You can join existing circles without an account.');
+            }
         }
 
         function joinCircle() {
@@ -60,7 +327,31 @@
                 return;
             }
             
-            window.location.href = `/room/${roomId}?username=${username}&language=${language}`;
+            // Store room in user's joined rooms if logged in
+            if (localStorage.getItem('isLoggedIn') === 'true') {
+                let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+                const roomData = {
+                    id: roomId,
+                    name: `Circle ${roomId.split('-')[1]}`,
+                    language: language,
+                    joinedAt: new Date().toISOString(),
+                    color: ['#ff6b9d', '#64ffda', '#c471ed', '#ff8a80', '#81c784'][Math.floor(Math.random() * 5)]
+                };
+                
+                if (!joinedRooms.find(room => room.id === roomId)) {
+                    joinedRooms.push(roomData);
+                    localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
+                }
+            }
+            
+            window.location.href = `/chat/${roomId}?username=${username}&language=${language}`;
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
         }
     </script>
 </body>
