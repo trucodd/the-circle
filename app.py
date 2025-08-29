@@ -107,6 +107,14 @@ def chat_room(room_id):
                          circle_color=circle_color,
                          circle_emoji=circle_emoji)
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
+@app.route('/user/<username>')
+def user_profile(username):
+    return render_template('user-profile.html', username=username)
+
 @socketio.on('join_circle')
 def handle_join_circle(data):
     room_id = data['room_id']
@@ -407,6 +415,32 @@ def handle_request_dub(data):
         'sid': request.sid,
         'language': target_language
     }, message_id)
+
+@socketio.on('leave_circle')
+def handle_leave_circle():
+    user_info = user_sessions.get(request.sid)
+    if user_info:
+        room_id = user_info['room_id']
+        username = user_info['username']
+        
+        leave_room(room_id)
+        
+        # Remove user from active rooms
+        if room_id in active_rooms:
+            active_rooms[room_id] = [user for user in active_rooms[room_id] 
+                                    if user['sid'] != request.sid]
+            
+            # Notify others
+            emit('user_left', {
+                'username': username,
+                'users': active_rooms[room_id]
+            }, room=room_id)
+        
+        # Clean up session
+        if request.sid in user_languages:
+            del user_languages[request.sid]
+        if request.sid in user_sessions:
+            del user_sessions[request.sid]
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)

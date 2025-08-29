@@ -3,307 +3,132 @@
 <head>
     <title>{{ room_name }} - The Circle</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#000000',
+                        'dark-card': '#1c1c1e',
+                        'dark-surface': '#2c2c2e',
+                        'dark-border': '#3a3a3c'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
-            color: #e0e0e0;
-            height: 100vh;
-            overflow: hidden;
+        .glass-effect {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
+        .message-bubble {
+            background: #3b82f6/20;
+            border: 1px solid #3b82f6/30;
         }
-        .chat-header {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+        .message-bubble.own {
+            background: #10b981/20;
+            border: 1px solid #10b981/30;
         }
-        .circle-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
-            background: var(--circle-color, #64ffda);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5em;
-            margin-right: 15px;
-            overflow: hidden;
+        .message-bubble.voice {
+            background: #f59e0b/20;
+            border: 1px solid #f59e0b/30;
         }
-        .circle-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 12px;
+        .message-bubble.voice.own {
+            background: #8b5cf6/20;
+            border: 1px solid #8b5cf6/30;
         }
-        .chat-info h2 {
-            font-size: 1.2em;
-            margin-bottom: 3px;
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-        .chat-info p {
-            font-size: 0.9em;
-            opacity: 0.7;
-        }
-        .chat-actions {
-            margin-left: auto;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .language-controls {
-            display: flex;
-            gap: 8px;
-            margin-right: 15px;
-        }
-        .lang-select {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .lang-select:focus { outline: none; background: rgba(255,255,255,0.2); }
-        .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-        }
-        .btn:hover { background: rgba(255,255,255,0.2); }
-        .messages-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-        .message {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            max-width: 70%;
-        }
-        .message.own {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-        .message-avatar {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #64ffda, #ff6b9d);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8em;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        .message-content {
-            background: rgba(255,255,255,0.1);
-            padding: 12px 16px;
-            border-radius: 18px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .message.own .message-content {
-            background: var(--circle-color, #64ffda);
-            color: white;
-        }
-        .message-text {
-            margin-bottom: 5px;
-            line-height: 1.4;
-        }
-        .message-voice {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 0;
-        }
-        .voice-play-btn {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        .voice-play-btn:hover { background: rgba(255,255,255,0.3); }
-        .voice-waveform {
-            flex: 1;
-            height: 30px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            font-size: 0.8em;
-        }
-        .dub-btn {
-            padding: 4px 8px;
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 0.7em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .dub-btn:hover { background: rgba(255,255,255,0.3); }
-        .message-time {
-            font-size: 0.7em;
-            opacity: 0.6;
-            margin-top: 3px;
-        }
-        .message-status {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.7em;
-            opacity: 0.6;
-            margin-top: 3px;
-        }
-        .input-area {
-            padding: 15px 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .input-container {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 25px;
-            padding: 8px;
-        }
-        .message-input {
-            flex: 1;
-            background: none;
-            border: none;
-            color: #e0e0e0;
-            font-size: 16px;
-            padding: 10px 15px;
-            resize: none;
-            max-height: 100px;
-            min-height: 20px;
-            outline: none;
-        }
-        .message-input::placeholder { color: #888; }
-        .input-actions {
-            display: flex;
-            gap: 5px;
-        }
-        .action-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-        }
-        .action-btn:hover { background: rgba(255,255,255,0.2); }
-        .action-btn.recording {
-            background: #ff4444;
-            animation: pulse 1s infinite;
-        }
-        .send-btn {
-            background: var(--circle-color, #64ffda);
-            color: white;
-        }
-        .send-btn:hover { transform: scale(1.1); }
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .typing-indicator {
-            padding: 10px 20px;
-            font-size: 0.9em;
-            opacity: 0.7;
-            font-style: italic;
-        }
-        .status-message {
-            text-align: center;
-            padding: 10px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            font-size: 0.9em;
-            opacity: 0.8;
-            margin: 10px 0;
-        }
-        @media (max-width: 768px) {
-            .message { max-width: 85%; }
-            .chat-header { padding: 10px 15px; }
-            .messages-area { padding: 15px; }
-            .input-area { padding: 10px 15px; }
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
         }
     </style>
 </head>
-<body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="circle-avatar" id="circleAvatar" style="--circle-color: {{ circle_color }}">
-                {{ circle_emoji }}
+
+<body class="bg-dark-bg h-screen text-gray-100 font-sans overflow-hidden">
+    <!-- Chat Container -->
+    <div class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="glass-effect px-4 py-3 border-b border-white/10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <!-- Circle Avatar -->
+                    <div id="circleAvatar" class="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center text-xl overflow-hidden">
+                        {{ circle_emoji }}
+                    </div>
+                    
+                    <!-- Chat Info -->
+                    <div>
+                        <h2 onclick="copyCircleId()" class="text-lg font-bold text-white cursor-pointer hover:text-gray-300 transition-colors" title="Tap to copy Circle ID">
+                            {{ room_id }}
+                        </h2>
+                        <p class="text-sm text-gray-400">
+                            <span id="participantCount">1</span> participants
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex space-x-2">
+                    <button onclick="leaveCircle()" 
+                            class="px-4 py-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all duration-300">
+                        Leave
+                    </button>
+                    <button onclick="window.location.href='/dashboard'" 
+                            class="px-4 py-2 rounded-xl bg-white/10 text-gray-300 hover:bg-white/20 transition-all duration-300">
+                        ← Back
+                    </button>
+                </div>
             </div>
-            <div class="chat-info">
-                <h2 id="circleName">{{ room_name }}</h2>
-                <p><span id="participantCount">1</span> participants • <span id="userLanguage"></span></p>
-            </div>
-            <div class="chat-actions">
-                <button class="btn" onclick="window.location.href='/dashboard'">← Back</button>
+        </header>
+        
+        <!-- Messages Area -->
+        <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Welcome Message -->
+            <div class="text-center py-4">
+                <div class="inline-block px-6 py-3 rounded-2xl bg-white/10 text-gray-300 text-sm">
+                    Welcome to {{ room_name }}! Start chatting with voice or text.
+                </div>
             </div>
         </div>
 
-        <div class="messages-area" id="messagesArea">
-            <div class="status-message">
-                Welcome to {{ room_name }}! Start chatting with voice or text.
-            </div>
-        </div>
+        <!-- Typing Indicator -->
+        <div id="typingIndicator" class="px-4 py-2 text-sm text-gray-400 italic min-h-[2rem]"></div>
 
-        <div class="typing-indicator" id="typingIndicator"></div>
-
-        <div class="input-area">
-            <div class="input-container">
+        <!-- Input Area -->
+        <div class="glass-effect p-4 border-t border-white/10">
+            <div class="flex items-end space-x-3 bg-white/10 rounded-3xl p-2">
                 <textarea 
                     id="messageInput" 
-                    class="message-input" 
                     placeholder="Type a message..." 
                     rows="1"
                     onkeydown="handleKeyDown(event)"
                     oninput="handleTyping()"
+                    class="flex-1 bg-transparent border-none text-white placeholder-gray-400 resize-none outline-none px-4 py-2 max-h-32"
                 ></textarea>
-                <div class="input-actions">
-                    <button class="action-btn" id="voiceBtn" onclick="toggleVoiceRecording()">
-                        🎤
+                
+                <div class="flex space-x-2">
+                    <button id="voiceBtn" onclick="toggleVoiceRecording()" 
+                            class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 transition-all duration-300">
+                        <img src="https://api.iconify.design/mdi:microphone.svg?color=white" alt="Microphone" class="w-5 h-5">
                     </button>
-                    <button class="action-btn send-btn" onclick="sendMessage()">
+                    <button onclick="sendMessage()" 
+                            class="w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-all duration-300">
                         ➤
+                    </button>
+                    <button onclick="leaveCircle()" 
+                            class="sm:hidden w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center text-red-400 transition-all duration-300" 
+                            title="Leave Circle">
+                        ✕
                     </button>
                 </div>
             </div>
@@ -314,14 +139,12 @@
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const username = urlParams.get('username') || 'Anonymous';
-        const userLanguage = urlParams.get('language') || 'en';
+        const userLanguage = localStorage.getItem('userLanguage') || 'en';
         const roomId = '{{ room_id }}';
         const circleColor = '{{ circle_color }}' || '#64ffda';
 
         document.documentElement.style.setProperty('--circle-color', circleColor);
-        document.getElementById('userLanguage').textContent = userLanguage.toUpperCase();
         
-
 
         const socket = io();
         let mediaRecorder;
@@ -383,18 +206,20 @@
             const isOwn = message.username === username;
             
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+            messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`;
             
             const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             
             messageDiv.innerHTML = `
-                ${!isOwn ? `<div class="message-avatar">${message.username.charAt(0).toUpperCase()}</div>` : ''}
-                <div class="message-content">
-                    ${!isOwn ? `<div style="font-weight: bold; font-size: 0.8em; margin-bottom: 3px; opacity: 0.8;">${message.username}</div>` : ''}
-                    <div class="message-text">${message.message}</div>
-                    <div class="message-time">${time}</div>
+                <div class="flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}">
+                    ${!isOwn ? `<div onclick="viewUserProfile('${message.username}')" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 cursor-pointer hover:bg-gray-500 transition-colors">${message.username.charAt(0).toUpperCase()}</div>` : ''}
+                    <div class="message-bubble rounded-2xl px-4 py-2 ${isOwn ? 'own' : ''}">
+                        ${!isOwn ? `<div class="text-xs font-semibold text-gray-300 mb-1">${message.username}</div>` : ''}
+                        <div class="text-white">${message.message}</div>
+                        <div class="text-xs text-gray-400 mt-1">${time}</div>
+                    </div>
+                    ${isOwn ? `<div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${username.charAt(0).toUpperCase()}</div>` : ''}
                 </div>
-                ${isOwn ? `<div class="message-avatar">${username.charAt(0).toUpperCase()}</div>` : ''}
             `;
             
             messagesArea.appendChild(messageDiv);
@@ -406,7 +231,7 @@
             const isOwn = data.speaker === username;
             
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isOwn ? 'own' : ''}`;
+            messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`;
             
             const time = new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const audioId = 'audio_' + Date.now();
@@ -417,23 +242,29 @@
             }[data.language] || data.language.toUpperCase();
             
             messageDiv.innerHTML = `
-                ${!isOwn ? `<div class="message-avatar">${data.speaker.charAt(0).toUpperCase()}</div>` : ''}
-                <div class="message-content">
-                    ${!isOwn ? `<div style="font-weight: bold; font-size: 0.8em; margin-bottom: 3px; opacity: 0.8;">${data.speaker}</div>` : ''}
-                    <div class="message-voice">
-                        <button class="voice-play-btn" onclick="playAudio('${audioId}')">▶️</button>
-                        <div class="voice-waveform">
-                            <span>🎵 ${langName}</span>
-                            ${!isOwn ? `<button class="dub-btn" onclick="requestDub('${data.message_id}', '${data.audio_data}', '${data.speaker}', '${data.language}')">🌍 Dub</button>` : ''}
+                <div class="flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}">
+                    ${!isOwn ? `<div onclick="viewUserProfile('${data.speaker}')" class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 cursor-pointer hover:bg-gray-500 transition-colors">${data.speaker.charAt(0).toUpperCase()}</div>` : ''}
+                    <div class="message-bubble voice rounded-2xl px-4 py-3 ${isOwn ? 'own' : ''}">
+                        ${!isOwn ? `<div class="text-xs font-semibold text-gray-300 mb-2">${data.speaker}</div>` : ''}
+                        <div class="flex items-center space-x-3">
+                            <button onclick="playAudio('${audioId}')" class="w-8 h-8 rounded-full bg-gray-600 hover:bg-gray-500 flex items-center justify-center text-white transition-all duration-300">
+                                <img src="https://api.iconify.design/mdi:play.svg?color=white" alt="Play" class="w-4 h-4">
+                            </button>
+                            <div class="flex-1">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm text-gray-300 flex items-center gap-1"><img src="https://api.iconify.design/mdi:waveform.svg?color=white" alt="Audio" class="w-4 h-4"> ${langName}</span>
+                                    ${!isOwn ? `<button onclick="requestDub('${data.message_id}', '${data.audio_data}', '${data.speaker}', '${data.language}')" class="text-xs px-2 py-1 rounded-lg bg-gray-600 hover:bg-gray-500 text-white transition-all duration-300 flex items-center gap-1"><img src="https://api.iconify.design/mdi:translate.svg?color=white" alt="Translate" class="w-3 h-3"> Dub</button>` : ''}
+                                </div>
+                            </div>
                         </div>
+                        <div class="text-xs text-gray-400 mt-2">${time}</div>
+                        <audio id="${audioId}" style="display: none;">
+                            <source src="data:audio/webm;base64,${data.audio_data}" type="audio/webm">
+                            <source src="data:audio/wav;base64,${data.audio_data}" type="audio/wav">
+                        </audio>
                     </div>
-                    <div class="message-time">${time}</div>
-                    <audio id="${audioId}" style="display: none;">
-                        <source src="data:audio/webm;base64,${data.audio_data}" type="audio/webm">
-                        <source src="data:audio/wav;base64,${data.audio_data}" type="audio/wav">
-                    </audio>
+                    ${isOwn ? `<div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${username.charAt(0).toUpperCase()}</div>` : ''}
                 </div>
-                ${isOwn ? `<div class="message-avatar">${username.charAt(0).toUpperCase()}</div>` : ''}
             `;
             
             messageDiv.setAttribute('data-message-id', data.message_id);
@@ -446,24 +277,28 @@
             const messagesArea = document.getElementById('messagesArea');
             
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
+            messageDiv.className = 'flex justify-start mb-4';
             
             const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const audioId = 'translated_audio_' + Date.now();
             
             messageDiv.innerHTML = `
-                <div class="message-avatar">${data.speaker.charAt(0).toUpperCase()}</div>
-                <div class="message-content">
-                    <div style="font-weight: bold; font-size: 0.8em; margin-bottom: 3px; opacity: 0.8;">${data.speaker} (translated)</div>
-                    <div class="message-voice">
-                        <button class="voice-play-btn" onclick="playAudio('${audioId}')">▶️</button>
-                        <div class="voice-waveform">🌍 Translated voice</div>
+                <div class="flex items-end space-x-2 max-w-xs lg:max-w-md">
+                    <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0">${data.speaker.charAt(0).toUpperCase()}</div>
+                    <div class="message-bubble rounded-2xl px-4 py-3">
+                        <div class="text-xs font-semibold text-gray-300 mb-2">${data.speaker} (translated)</div>
+                        <div class="flex items-center space-x-3">
+                            <button onclick="playAudio('${audioId}')" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all duration-300">
+                                ▶️
+                            </button>
+                            <span class="text-sm text-gray-300">🌍 Translated voice</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-2">${time}</div>
+                        <audio id="${audioId}" style="display: none;">
+                            <source src="data:audio/webm;base64,${data.audio_data}" type="audio/webm">
+                            <source src="data:audio/wav;base64,${data.audio_data}" type="audio/wav">
+                        </audio>
                     </div>
-                    <div class="message-time">${time}</div>
-                    <audio id="${audioId}" style="display: none;">
-                        <source src="data:audio/webm;base64,${data.audio_data}" type="audio/webm">
-                        <source src="data:audio/wav;base64,${data.audio_data}" type="audio/wav">
-                    </audio>
                 </div>
             `;
             
@@ -474,8 +309,8 @@
         function addStatusMessage(text) {
             const messagesArea = document.getElementById('messagesArea');
             const statusDiv = document.createElement('div');
-            statusDiv.className = 'status-message';
-            statusDiv.textContent = text;
+            statusDiv.className = 'text-center py-2';
+            statusDiv.innerHTML = `<div class="inline-block px-4 py-2 rounded-2xl bg-white/10 text-gray-400 text-sm">${text}</div>`;
             messagesArea.appendChild(statusDiv);
             scrollToBottom();
         }
@@ -538,8 +373,8 @@
 
                     mediaRecorder.start();
                     isRecording = true;
-                    voiceBtn.textContent = '⏹️';
-                    voiceBtn.classList.add('recording');
+                    voiceBtn.innerHTML = '<img src="https://api.iconify.design/mdi:stop.svg?color=white" alt="Stop" class="w-5 h-5">';
+                    voiceBtn.classList.add('pulse');
                     
                 } catch (err) {
                     alert('Microphone access required for voice messages');
@@ -547,8 +382,8 @@
             } else {
                 mediaRecorder.stop();
                 isRecording = false;
-                voiceBtn.textContent = '🎤';
-                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<img src="https://api.iconify.design/mdi:microphone.svg?color=white" alt="Microphone" class="w-5 h-5">';
+                voiceBtn.classList.remove('pulse');
             }
         }
 
@@ -592,7 +427,7 @@
         }
 
         function requestDub(messageId, audioData, speakerName, sourceLanguage) {
-            const targetLanguage = userLanguage;
+            const targetLanguage = localStorage.getItem('userLanguage') || 'en';
             if (targetLanguage === sourceLanguage) {
                 alert('This message is already in your language');
                 return;
@@ -622,10 +457,13 @@
                 // Add dubbed audio to message
                 messageDiv.innerHTML += dubAudio;
                 
-                // Replace dub button with play dubbed button
-                const dubBtn = messageDiv.querySelector('.dub-btn');
+                // Find and replace dub button
+                const dubBtn = messageDiv.querySelector('button[onclick*="requestDub"]');
                 if (dubBtn) {
-                    dubBtn.outerHTML = `<button class="voice-play-btn" onclick="playAudio('${audioId}')" style="background: #64ffda; margin-left: 5px;" title="Play dubbed version">🌍</button>`;
+                    dubBtn.onclick = () => playAudio(audioId);
+                    dubBtn.innerHTML = '<img src="https://api.iconify.design/mdi:play.svg?color=white" alt="Play" class="w-3 h-3 inline"> Play';
+                    dubBtn.disabled = false;
+                    dubBtn.title = 'Play dubbed version';
                 }
             }
         }
@@ -635,13 +473,57 @@
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
 
+        function leaveCircle() {
+            if (confirm('Are you sure you want to leave this circle?')) {
+                socket.emit('leave_circle');
+                
+                // Remove from joined rooms
+                let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
+                joinedRooms = joinedRooms.filter(room => room.id !== roomId);
+                localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
+                
+                window.location.href = '/dashboard';
+            }
+        }
+
+        function copyCircleId() {
+            const titleElement = document.querySelector('h2[onclick="copyCircleId()"]');
+            const originalText = titleElement.textContent;
+            navigator.clipboard.writeText(roomId).then(() => {
+                titleElement.textContent = 'Copied!';
+                setTimeout(() => {
+                    titleElement.textContent = originalText;
+                }, 1000);
+            }).catch(() => {
+                alert('Circle ID: ' + roomId);
+            });
+        }
+
+        function viewUserProfile(username) {
+            window.open(`/user/${username}?user=${username}`, '_blank');
+        }
+
         // Load circle data if available
         const joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
         const currentRoom = joinedRooms.find(room => room.id === roomId);
         if (currentRoom) {
             document.getElementById('circleName').textContent = currentRoom.name;
             if (currentRoom.image) {
-                document.getElementById('circleAvatar').innerHTML = `<img src="${currentRoom.image}" alt="${currentRoom.name}">`;
+                document.getElementById('circleAvatar').innerHTML = `<img src="${currentRoom.image}" alt="${currentRoom.name}" class="w-full h-full object-cover rounded-2xl">`;
+            }
+            // Show creation date
+            if (currentRoom.joinedAt) {
+                const date = new Date(currentRoom.joinedAt);
+                if (!isNaN(date.getTime())) {
+                    const createdDate = date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long', 
+                        day: 'numeric'
+                    });
+                    setTimeout(() => {
+                        addStatusMessage(`Circle created on ${createdDate}`);
+                    }, 1000);
+                }
             }
         }
     </script>

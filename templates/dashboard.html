@@ -3,285 +3,137 @@
 <head>
     <title>Dashboard - The Circle</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#000000',
+                        'dark-card': '#1c1c1e',
+                        'dark-surface': '#2c2c2e',
+                        'dark-border': '#3a3a3c'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
-            color: #e0e0e0;
-            min-height: 100vh;
+        .glass-effect {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        .profile-pic {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, #64ffda, #ff6b9d);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
-        .dashboard-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        .dashboard-header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .rooms-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .rooms-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 25px;
-        }
-        .room-card {
-            background: rgba(255,255,255,0.05);
-            padding: 30px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 
-                0 20px 40px rgba(0,0,0,0.3),
-                inset 0 1px 0 rgba(255,255,255,0.1);
-            transition: all 0.4s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .room-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--accent-color);
+        .widget-card {
+            background: #1c1c1e;
+            border: 1px solid #3a3a3c;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         }
         .circle-widget {
-            width: 80px;
-            height: 80px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2em;
-            margin-bottom: 15px;
-            background: var(--accent-color);
-            overflow: hidden;
-        }
-        .circle-widget img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 17px;
-        }
-        .room-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 
-                0 30px 60px rgba(0,0,0,0.4),
-                inset 0 1px 0 rgba(255,255,255,0.2);
-        }
-        .room-card.pink { --accent-color: #ff6b9d; }
-        .room-card.green { --accent-color: #64ffda; }
-        .room-card.purple { --accent-color: #c471ed; }
-        .room-card.orange { --accent-color: #ff8a80; }
-        .room-card.blue { --accent-color: #81c784; }
-        .room-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
-        .room-name {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: var(--accent-color);
-            margin-bottom: 5px;
-        }
-        .room-id {
-            font-size: 0.9em;
-            opacity: 0.7;
-            font-family: monospace;
-        }
-        .room-meta {
-            display: flex;
-            gap: 15px;
-            margin: 15px 0;
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-        .room-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .btn-small {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s ease;
-        }
-        .btn-join {
-            background: linear-gradient(45deg, var(--accent-color), rgba(255,255,255,0.2));
-            color: white;
-        }
-        .btn-leave {
-            background: rgba(255,255,255,0.1);
-            color: #ff6b6b;
-            border: 1px solid #ff6b6b;
-        }
-        .btn-small:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            opacity: 0.6;
-        }
-        .empty-state h3 {
-            font-size: 1.5em;
-            margin-bottom: 15px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
-        }
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(30,30,46,0.95);
-            padding: 40px;
-            border-radius: 25px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            min-width: 400px;
-        }
-        .modal h3 {
-            margin-bottom: 20px;
-            color: #64ffda;
-        }
-        .modal input {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .modal input:focus {
-            outline: none;
-            border: 2px solid #64ffda;
-        }
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-        @media (max-width: 768px) {
-            .rooms-grid { grid-template-columns: 1fr; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .dashboard-header h1 { font-size: 2.2em; }
-            .header { flex-direction: column; gap: 15px; }
-            .rooms-header { flex-direction: column; gap: 15px; align-items: stretch; }
-            .modal-content { min-width: 300px; padding: 30px 20px; }
+            background: #2c2c2e;
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">🌍 The Circle</div>
-        <div class="user-info">
-            <div class="profile-pic" id="profilePic">U</div>
-            <span id="userName">User</span>
-            <button class="btn" onclick="logout()">Logout</button>
+
+<body class="bg-dark-bg min-h-screen text-gray-100 font-sans">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gray-700 flex items-center justify-center">
+                        <img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Earth" class="w-6 h-6">
+                    </div>
+                    <span class="text-xl font-bold text-white">The Circle</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="window.location.href='/profile'">
+                        <div id="profilePic" class="w-10 h-10 rounded-2xl bg-gray-700 flex items-center justify-center font-bold text-white hover:bg-gray-600 transition-colors">U</div>
+                        <span id="userName" class="text-gray-200 font-medium hover:text-white transition-colors">User</span>
+                    </div>
+                    <button onclick="logout()" class="px-4 py-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all duration-300">
+                        Logout
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <div class="container">
-        <div class="dashboard-header">
-            <h1>Your Dashboard</h1>
-            <p>Manage your circles and connections</p>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Dashboard Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                Your Dashboard
+            </h1>
+            <p class="text-xl text-gray-300">Manage your circles and connections</p>
         </div>
 
-
-
-        <div class="rooms-header">
-            <h2>Your Circles</h2>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn" onclick="window.location.href='/create-circle'">Create Circle</button>
-                <button class="btn btn-outline" onclick="showJoinModal()">Join Circle</button>
+        <!-- Direct Messages Section -->
+        <div class="mb-8" id="dmSection" style="display: none;">
+            <h2 class="text-2xl font-bold text-white mb-6">Direct Messages</h2>
+            <div id="dmGrid" class="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6 mb-8">
+                <!-- DMs will be loaded here -->
             </div>
         </div>
 
-        <div class="rooms-grid" id="roomsGrid">
-            <!-- Rooms will be loaded here -->
-        </div>
+        <!-- Circles Section -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <h2 class="text-2xl font-bold text-white">Your Circles</h2>
+                <div class="flex space-x-3">
+                    <button onclick="window.location.href='/create-circle'" 
+                            class="px-6 py-2 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-all duration-300">
+                        Create Circle
+                    </button>
+                    <button onclick="showJoinModal()" 
+                            class="px-6 py-2 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300">
+                        Join Circle
+                    </button>
+                </div>
+            </div>
 
-        <div class="empty-state" id="emptyState" style="display: none;">
-            <h3>No circles joined yet</h3>
-            <p>Start by joining or creating your first circle!</p>
-            <button class="btn" onclick="showJoinModal()" style="margin-top: 20px;">Join Circle</button>
+            <div id="roomsGrid" class="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6">
+                <!-- Rooms will be loaded here -->
+            </div>
+
+            <div id="emptyState" class="text-center py-16 hidden">
+                <div class="widget-card rounded-3xl p-12 max-w-md mx-auto">
+                    <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center mx-auto mb-6">
+                        <img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Earth" class="w-10 h-10">
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-300 mb-4">No circles joined yet</h3>
+                    <p class="text-gray-400 mb-6">Start by joining or creating your first circle!</p>
+                    <button onclick="showJoinModal()" 
+                            class="px-6 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        Join Circle
+                    </button>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
     <!-- Join Circle Modal -->
-    <div class="modal" id="joinModal">
-        <div class="modal-content">
-            <h3>Join Circle</h3>
-            <input type="text" id="circleIdInput" placeholder="Enter Circle ID (e.g., circle-abc123)">
-            <div class="modal-buttons">
-                <button class="btn btn-outline" onclick="closeJoinModal()">Cancel</button>
-                <button class="btn" onclick="joinCircle()">Join</button>
+    <div id="joinModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="widget-card rounded-3xl p-8 w-full max-w-md">
+                <h3 class="text-2xl font-bold text-accent-cyan mb-6">Join Circle</h3>
+                <input type="text" id="circleIdInput" placeholder="Enter Circle ID (e.g., circle-abc123)" 
+                       class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300 mb-6">
+                <div class="flex space-x-3">
+                    <button onclick="closeJoinModal()" 
+                            class="flex-1 py-3 rounded-xl border border-gray-500 text-gray-300 hover:bg-gray-500/20 transition-all duration-300">
+                        Cancel
+                    </button>
+                    <button onclick="joinCircle()" 
+                            class="flex-1 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        Join
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -301,53 +153,83 @@
         function loadRooms() {
             const joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
             const roomsGrid = document.getElementById('roomsGrid');
+            const dmGrid = document.getElementById('dmGrid');
+            const dmSection = document.getElementById('dmSection');
             const emptyState = document.getElementById('emptyState');
 
-            if (joinedRooms.length === 0) {
-                emptyState.style.display = 'block';
+            // Separate DMs from circles
+            const circles = joinedRooms.filter(room => !room.isDM);
+            const dms = joinedRooms.filter(room => room.isDM);
+
+            // Show/hide DM section
+            if (dms.length > 0) {
+                dmSection.style.display = 'block';
+                dmGrid.innerHTML = '';
+                dms.forEach(room => createRoomCard(room, dmGrid, true));
+            } else {
+                dmSection.style.display = 'none';
+            }
+
+            if (circles.length === 0) {
+                emptyState.classList.remove('hidden');
                 return;
             }
 
-            emptyState.style.display = 'none';
+            emptyState.classList.add('hidden');
             roomsGrid.innerHTML = '';
 
-            joinedRooms.forEach((room, index) => {
-                const roomCard = document.createElement('div');
-                const colorClass = ['pink', 'green', 'purple', 'orange', 'blue'][index % 5];
-                const joinedDate = new Date(room.joinedAt).toLocaleDateString();
+            circles.forEach((room, index) => createRoomCard(room, roomsGrid, false, index));
+        }
+
+        function createRoomCard(room, container, isDM, index = 0) {
+            const roomCard = document.createElement('div');
+            const date = new Date(room.joinedAt || Date.now());
+            const joinedDate = date.toLocaleDateString();
+            
+            roomCard.className = 'widget-card rounded-3xl p-3 md:p-6 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer group aspect-square md:aspect-auto relative';
+            
+            const widgetContent = room.image 
+                ? `<img src="${room.image}" alt="${room.name}" class="w-full h-full object-cover rounded-2xl">` 
+                : isDM 
+                    ? `<img src="https://api.iconify.design/mdi:message.svg?color=white" alt="DM" class="w-6 h-6 md:w-8 md:h-8">` 
+                    : `<img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Circle" class="w-6 h-6 md:w-8 md:h-8">`;
+            
+            roomCard.innerHTML = `
+                <div class="md:hidden flex flex-col h-full">
+                    ${room.isOwner ? '<div class="absolute top-2 right-2"><img src="https://api.iconify.design/mdi:crown.svg?color=gold" alt="Owner" class="w-4 h-4"></div>' : ''}
+                    ${isDM ? '<div class="absolute top-2 left-2"><span class="text-xs px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400">DM</span></div>' : ''}
+                    <div class="w-12 h-12 rounded-2xl circle-widget flex items-center justify-center mb-3 mx-auto">
+                        ${widgetContent}
+                    </div>
+                    <div class="flex-1 text-center">
+                        <h3 class="text-sm font-bold text-white mb-1 leading-tight">${room.name}</h3>
+                        ${room.description && !isDM ? `<p class="text-xs text-gray-400 line-clamp-2 leading-tight">${room.description}</p>` : ''}
+                    </div>
+                </div>
                 
-                roomCard.className = `room-card ${colorClass}`;
-                const widgetContent = room.image 
-                    ? `<img src="${room.image}" alt="${room.name}">` 
-                    : (room.emoji || '🌍');
-                
-                roomCard.innerHTML = `
-                    <div class="room-header">
-                        <div class="circle-widget" style="background: ${room.color || '#64ffda'}">
+                <div class="hidden md:block">
+                    <div class="flex items-start space-x-4 mb-4">
+                        <div class="w-16 h-16 rounded-2xl circle-widget flex items-center justify-center flex-shrink-0">
                             ${widgetContent}
                         </div>
-                        <div>
-                            <div class="room-name">${room.name}</div>
-                            <div class="room-id">${room.id}</div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-white mb-1 truncate">${room.name}</h3>
+                            ${!isDM ? `<p class="text-sm text-gray-400 font-mono">${room.id}</p>` : ''}
                         </div>
                     </div>
-                    ${room.description ? `<p style="opacity: 0.8; margin: 10px 0;">${room.description}</p>` : ''}
-                    <div class="room-meta">
-                        <span>🌐 ${room.language.toUpperCase()}</span>
-                        <span>📅 ${joinedDate}</span>
-                        ${room.isOwner ? '<span>👑 Owner</span>' : ''}
+                    
+                    ${room.description && !isDM ? `<p class="text-gray-300 text-sm mb-4 line-clamp-2">${room.description}</p>` : ''}
+                    
+                    <div class="flex flex-wrap gap-2 mb-4 text-xs">
+                        ${isDM ? '<span class="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400">Direct Message</span>' : `<span class="px-2 py-1 rounded-lg bg-white/10 text-gray-300">${room.language.toUpperCase()}</span>`}
+                        <span class="px-2 py-1 rounded-lg bg-white/10 text-gray-300">${joinedDate}</span>
+                        ${room.isOwner ? '<span class="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-400">Owner</span>' : ''}
                     </div>
-                    <div class="room-actions">
-                        <button class="btn-small btn-join" onclick="rejoinRoom('${room.id}', '${room.language}')">
-                            ${room.isOwner ? 'Enter Circle' : 'Rejoin Circle'}
-                        </button>
-                        <button class="btn-small btn-leave" onclick="leaveRoom('${room.id}')">
-                            Leave
-                        </button>
-                    </div>
-                `;
-                roomsGrid.appendChild(roomCard);
-            });
+                </div>
+            `;
+            
+            roomCard.onclick = () => rejoinRoom(room.id, room.language);
+            container.appendChild(roomCard);
 
 
         }
@@ -359,14 +241,7 @@
             window.location.href = `/chat/${roomId}?username=${username}&language=${language}`;
         }
 
-        function leaveRoom(roomId) {
-            if (confirm('Are you sure you want to leave this circle?')) {
-                let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]');
-                joinedRooms = joinedRooms.filter(room => room.id !== roomId);
-                localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms));
-                loadRooms();
-            }
-        }
+
 
         function logout() {
             localStorage.removeItem('isLoggedIn');
@@ -376,12 +251,12 @@
         }
 
         function showJoinModal() {
-            document.getElementById('joinModal').style.display = 'block';
+            document.getElementById('joinModal').classList.remove('hidden');
             document.getElementById('circleIdInput').focus();
         }
 
         function closeJoinModal() {
-            document.getElementById('joinModal').style.display = 'none';
+            document.getElementById('joinModal').classList.add('hidden');
             document.getElementById('circleIdInput').value = '';
         }
 
@@ -407,7 +282,7 @@
                     language: userLanguage,
                     color: '#64ffda',
                     emoji: '🌍',
-                    joinedAt: new Date().toISOString(),
+                    joinedAt: Date.now(),
                     isOwner: false
                 };
                 joinedRooms.push(newRoom);

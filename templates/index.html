@@ -3,253 +3,235 @@
 <head>
     <title>The Circle</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#000000',
+                        'dark-card': '#1c1c1e',
+                        'dark-surface': '#2c2c2e',
+                        'dark-border': '#3a3a3c'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
-            color: #e0e0e0;
-            min-height: 100vh;
+        .glass-effect {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
-        .auth-buttons { display: flex; gap: 10px; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #64ffda;
-            color: #64ffda;
-        }
-        .btn-outline:hover { background: #64ffda; color: #1e1e2e; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        .hero {
-            text-align: center;
-            margin: 60px 0;
-            background: rgba(255,255,255,0.05);
-            padding: 60px 40px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .hero h1 {
-            font-size: 3.5em;
-            margin-bottom: 20px;
-            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .hero p { font-size: 1.2em; opacity: 0.8; }
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin: 40px 0;
-        }
-        .card {
-            background: rgba(255,255,255,0.05);
-            padding: 40px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        .form-group { margin: 20px 0; }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-            font-size: 16px;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #64ffda;
-            background: rgba(255,255,255,0.15);
-        }
-        .form-group input::placeholder { color: #888; }
-        .btn-large {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 15px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-secondary {
-            background: linear-gradient(45deg, #ff6b9d 0%, #ff8a80 100%);
-            color: white;
-        }
-        .btn-large:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-        }
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(30,30,46,0.95);
-            padding: 40px;
-            border-radius: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
-            min-width: 400px;
-            max-width: 90vw;
-        }
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #888;
-        }
-        .close:hover { color: #ff6b9d; }
-        @media (max-width: 768px) {
-            .main-content { grid-template-columns: 1fr; }
-            .hero { padding: 40px 20px; }
-            .hero h1 { font-size: 2.5em; }
-            .modal-content { min-width: 300px; padding: 30px; }
-            .header { flex-direction: column; gap: 20px; }
+        .widget-card {
+            background: #1c1c1e;
+            border: 1px solid #3a3a3c;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">🌍 The Circle</div>
-        <div class="auth-buttons">
-            <button class="btn btn-outline" onclick="showLogin()">Login</button>
-            <button class="btn" onclick="showRegister()">Sign Up</button>
-        </div>
-    </div>
-
-    <div class="container">
-        <div class="hero">
-            <h1>Join a Circle</h1>
-            <p>People from anywhere. Thoughts in every language. One circle.</p>
-        </div>
-
-        <div class="main-content">
-            <div class="card">
-                <h2 style="margin-bottom: 30px; color: #64ffda;">Quick Join</h2>
-                <div class="form-group">
-                    <input type="text" id="username" placeholder="Your Name" required>
+<body class="bg-dark-bg min-h-screen text-gray-100 font-sans">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gray-700 flex items-center justify-center">
+                        <img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Earth" class="w-6 h-6">
+                    </div>
+                    <span class="text-xl font-bold text-white">The Circle</span>
                 </div>
-                <div class="form-group">
-                    <select id="language">
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="ja">Japanese</option>
-                        <option value="hi">Hindi</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <input type="text" id="roomId" placeholder="Circle ID" required>
-                </div>
-                <button class="btn-large btn-primary" onclick="joinCircle()">Join Circle</button>
-                <button class="btn-large btn-secondary" onclick="startCircle()">Start New Circle</button>
-            </div>
-
-            <div class="card">
-                <h2 style="margin-bottom: 30px; color: #ff6b9d;">Why The Circle?</h2>
-                <div style="text-align: left;">
-                    <p style="margin: 15px 0; opacity: 0.9;">💬 Instant text chat</p>
-                    <p style="margin: 15px 0; opacity: 0.9;">🎙️ Voice messaging</p>
-                    <p style="margin: 15px 0; opacity: 0.9;">🔒 Secure & private conversations</p>
-                    <p style="margin: 15px 0; opacity: 0.9;">📱 Works on any device</p>
-                    <p style="margin: 15px 0; opacity: 0.9;">🌐 Multi-language support</p>
+                <div class="flex space-x-3">
+                    <button onclick="showLogin()" class="px-4 py-2 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300">
+                        Login
+                    </button>
+                    <button onclick="showRegister()" class="px-4 py-2 rounded-xl bg-gray-700 text-white hover:bg-gray-600 transition-all duration-300">
+                        Sign Up
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-16">
+            <div class="widget-card rounded-3xl p-12 mb-8">
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-6">
+                    Join a Circle
+                </h1>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+                    People from anywhere. Thoughts in every language. One circle.
+                </p>
+            </div>
+        </div>
+
+        <!-- Main Cards Grid -->
+        <div class="grid lg:grid-cols-2 gap-8 mb-16">
+            <!-- Quick Join Card -->
+            <div class="widget-card rounded-3xl p-8">
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center">
+                        <img src="https://api.iconify.design/mdi:lightning-bolt.svg?color=white" alt="Lightning" class="w-6 h-6">
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Quick Join</h2>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <input type="text" id="username" placeholder="Your Name" required 
+                               class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300">
+                    </div>
+                    <div>
+                        <select id="language" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300">
+                            <option value="en" class="bg-dark-card">English</option>
+                            <option value="es" class="bg-dark-card">Spanish</option>
+                            <option value="fr" class="bg-dark-card">French</option>
+                            <option value="ja" class="bg-dark-card">Japanese</option>
+                            <option value="hi" class="bg-dark-card">Hindi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <input type="text" id="roomId" placeholder="Circle ID" required 
+                               class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300">
+                    </div>
+                    
+                    <div class="space-y-3 pt-4">
+                        <button onclick="joinCircle()" 
+                                class="w-full py-3 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-all duration-300">
+                            Join Circle
+                        </button>
+                        <button onclick="startCircle()" 
+                                class="w-full py-3 rounded-xl bg-gray-600 text-white font-semibold hover:bg-gray-500 transition-all duration-300">
+                            Start New Circle
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Card -->
+            <div class="widget-card rounded-3xl p-8">
+                <div class="flex items-center space-x-3 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center">
+                        <img src="https://api.iconify.design/mdi:star-outline.svg?color=white" alt="Star" class="w-6 h-6">
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">Why The Circle?</h2>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
+                        <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                            <img src="https://api.iconify.design/mdi:chat.svg?color=white" alt="Chat" class="w-5 h-5">
+                        </div>
+                        <span class="text-gray-300">Instant text chat</span>
+                    </div>
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
+                        <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                            <img src="https://api.iconify.design/mdi:microphone.svg?color=white" alt="Microphone" class="w-5 h-5">
+                        </div>
+                        <span class="text-gray-300">Voice messaging</span>
+                    </div>
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
+                        <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                            <img src="https://api.iconify.design/mdi:lock.svg?color=white" alt="Lock" class="w-5 h-5">
+                        </div>
+                        <span class="text-gray-300">Secure & private conversations</span>
+                    </div>
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
+                        <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                            <img src="https://api.iconify.design/mdi:devices.svg?color=white" alt="Devices" class="w-5 h-5">
+                        </div>
+                        <span class="text-gray-300">Works on any device</span>
+                    </div>
+                    <div class="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
+                        <div class="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
+                            <img src="https://api.iconify.design/mdi:translate.svg?color=white" alt="Translate" class="w-5 h-5">
+                        </div>
+                        <span class="text-gray-300">Multi-language support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('loginModal')">&times;</span>
-            <h2 style="margin-bottom: 30px; color: #64ffda;">Login</h2>
-            <div class="form-group">
-                <input type="email" id="loginEmail" placeholder="Email" required>
+    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="widget-card rounded-3xl p-8 w-full max-w-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-accent-cyan">Login</h2>
+                    <button onclick="closeModal('loginModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-6">
+                    <input type="email" id="loginEmail" placeholder="Email" required 
+                           class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300">
+                    <input type="password" id="loginPassword" placeholder="Password" required 
+                           class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300">
+                    
+                    <button onclick="login()" 
+                            class="w-full py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        Login
+                    </button>
+                    
+                    <p class="text-center text-gray-400">
+                        Don't have an account? 
+                        <a href="#" onclick="showRegister(); closeModal('loginModal');" class="text-accent-cyan hover:underline">Sign up</a>
+                    </p>
+                </div>
             </div>
-            <div class="form-group">
-                <input type="password" id="loginPassword" placeholder="Password" required>
-            </div>
-            <button class="btn-large btn-primary" onclick="login()">Login</button>
-            <p style="text-align: center; margin-top: 20px; opacity: 0.7;">
-                Don't have an account? <a href="#" onclick="showRegister(); closeModal('loginModal');" style="color: #64ffda;">Sign up</a>
-            </p>
         </div>
     </div>
 
     <!-- Register Modal -->
-    <div id="registerModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('registerModal')">&times;</span>
-            <h2 style="margin-bottom: 30px; color: #ff6b9d;">Sign Up</h2>
-            <div class="form-group">
-                <input type="text" id="registerName" placeholder="Full Name" required>
+    <div id="registerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="widget-card rounded-3xl p-8 w-full max-w-md">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-accent-pink">Sign Up</h2>
+                    <button onclick="closeModal('registerModal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                
+                <div class="space-y-6">
+                    <input type="text" id="registerName" placeholder="Full Name" required 
+                           class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-pink focus:ring-2 focus:ring-accent-pink/20 transition-all duration-300">
+                    <input type="email" id="registerEmail" placeholder="Email" required 
+                           class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-pink focus:ring-2 focus:ring-accent-pink/20 transition-all duration-300">
+                    <input type="password" id="registerPassword" placeholder="Password" required 
+                           class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-pink focus:ring-2 focus:ring-accent-pink/20 transition-all duration-300">
+                    
+                    <button onclick="register()" 
+                            class="w-full py-3 rounded-xl bg-gradient-to-r from-accent-pink to-accent-purple text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        Sign Up
+                    </button>
+                    
+                    <p class="text-center text-gray-400">
+                        Already have an account? 
+                        <a href="#" onclick="showLogin(); closeModal('registerModal');" class="text-accent-cyan hover:underline">Login</a>
+                    </p>
+                </div>
             </div>
-            <div class="form-group">
-                <input type="email" id="registerEmail" placeholder="Email" required>
-            </div>
-            <div class="form-group">
-                <input type="password" id="registerPassword" placeholder="Password" required>
-            </div>
-            <button class="btn-large btn-primary" onclick="register()">Sign Up</button>
-            <p style="text-align: center; margin-top: 20px; opacity: 0.7;">
-                Already have an account? <a href="#" onclick="showLogin(); closeModal('registerModal');" style="color: #64ffda;">Login</a>
-            </p>
         </div>
     </div>
 
     <script>
         function showLogin() {
-            document.getElementById('loginModal').style.display = 'block';
+            document.getElementById('loginModal').classList.remove('hidden');
         }
 
         function showRegister() {
-            document.getElementById('registerModal').style.display = 'block';
+            document.getElementById('registerModal').classList.remove('hidden');
         }
 
         function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
+            document.getElementById(modalId).classList.add('hidden');
         }
 
         function login() {
@@ -349,8 +331,8 @@
 
         // Close modal when clicking outside
         window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+            if (event.target.classList.contains('fixed') && event.target.classList.contains('inset-0')) {
+                event.target.classList.add('hidden');
             }
         }
     </script>

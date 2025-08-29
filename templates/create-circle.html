@@ -3,248 +3,146 @@
 <head>
     <title>Create Circle - The Circle</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#000000',
+                        'dark-card': '#1c1c1e',
+                        'dark-surface': '#2c2c2e',
+                        'dark-border': '#3a3a3c'
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
-            color: #e0e0e0;
-            min-height: 100vh;
+        .glass-effect {
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .logo { font-size: 24px; font-weight: bold; color: #64ffda; }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #64ffda;
-            color: #64ffda;
-        }
-        .btn-outline:hover { background: #64ffda; color: #1e1e2e; }
-        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        .create-header {
-            text-align: center;
-            margin-bottom: 50px;
-        }
-        .create-header h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #64ffda, #ff6b9d, #c471ed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .form-card {
-            background: rgba(255,255,255,0.05);
-            padding: 40px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-        .form-group { margin: 25px 0; }
-        .form-group label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: 500;
-            color: #64ffda;
-        }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 15px;
-            background: rgba(255,255,255,0.1);
-            color: #e0e0e0;
-            font-size: 16px;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-            outline: none;
-            border-color: #64ffda;
-            background: rgba(255,255,255,0.15);
-        }
-        .form-group input::placeholder, .form-group textarea::placeholder { color: #888; }
-        .form-group textarea { resize: vertical; min-height: 100px; }
-        .image-upload {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-        .image-preview {
-            width: 150px;
-            height: 150px;
-            border-radius: 25px;
-            background: var(--selected-color, linear-gradient(45deg, #64ffda, #ff6b9d));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3em;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            border: 3px solid rgba(255,255,255,0.2);
-            overflow: hidden;
-        }
-        .image-preview:hover {
-            transform: scale(1.05);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
-        }
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 22px;
-        }
-        .upload-btn {
-            padding: 12px 25px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid #64ffda;
-            color: #64ffda;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .upload-btn:hover {
-            background: #64ffda;
-            color: #1e1e2e;
-        }
-        .color-picker {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-top: 15px;
+        .widget-card {
+            background: #1c1c1e;
+            border: 1px solid #3a3a3c;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
         }
         .color-option {
-            width: 50px;
-            height: 50px;
-            border-radius: 15px;
-            cursor: pointer;
-            border: 3px solid transparent;
             transition: all 0.3s ease;
         }
         .color-option:hover {
             transform: scale(1.1);
-            border-color: rgba(255,255,255,0.5);
         }
         .color-option.selected {
-            border-color: white;
             transform: scale(1.15);
-        }
-        .circle-id {
-            background: rgba(255,255,255,0.1);
-            padding: 15px;
-            border-radius: 15px;
-            font-family: monospace;
-            text-align: center;
-            font-size: 18px;
-            color: #64ffda;
-            border: 2px solid rgba(100, 255, 218, 0.3);
-        }
-        .btn-large {
-            width: 100%;
-            padding: 18px;
-            margin: 20px 0 10px 0;
-            border: none;
-            border-radius: 20px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: linear-gradient(45deg, #64ffda 0%, #ff6b9d 100%);
-            color: white;
-            font-weight: 600;
-        }
-        .btn-large:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
-        .hidden { display: none; }
-        @media (max-width: 768px) {
-            .create-header h1 { font-size: 2.2em; }
-            .form-card { padding: 30px 20px; }
-            .color-picker { grid-template-columns: repeat(3, 1fr); }
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
-<body>
-    <div class="header">
-        <div class="logo">🌍 The Circle</div>
-        <div>
-            <button class="btn btn-outline" onclick="window.location.href='/dashboard'">Back to Dashboard</button>
-        </div>
-    </div>
 
-    <div class="container">
-        <div class="create-header">
-            <h1>Create Your Circle</h1>
-            <p>Design your unique space for conversations</p>
+<body class="bg-dark-bg min-h-screen text-gray-100 font-sans">
+    <!-- Header -->
+    <header class="glass-effect sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-gray-700 flex items-center justify-center">
+                        <img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Earth" class="w-6 h-6">
+                    </div>
+                    <span class="text-xl font-bold text-white">The Circle</span>
+                </div>
+                <button onclick="window.location.href='/dashboard'" 
+                        class="px-4 py-2 rounded-xl border border-accent-cyan text-accent-cyan hover:bg-accent-cyan hover:text-dark-bg transition-all duration-300">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                Create Your Circle
+            </h1>
+            <p class="text-xl text-gray-300">Design your unique space for conversations</p>
         </div>
 
-        <div class="form-card">
-            <form id="createCircleForm">
-                <div class="form-group">
-                    <label>Circle Name</label>
-                    <input type="text" id="circleName" placeholder="Enter circle name" required>
+        <!-- Form Card -->
+        <div class="widget-card rounded-3xl p-8 max-w-2xl mx-auto">
+            <form id="createCircleForm" class="space-y-8">
+                <!-- Circle Name -->
+                <div>
+                    <label class="block text-white font-semibold mb-3">Circle Name</label>
+                    <input type="text" id="circleName" placeholder="Enter circle name" required 
+                           class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-600 text-white placeholder-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-500/20 transition-all duration-300">
                 </div>
 
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="circleDescription" placeholder="What's your circle about?"></textarea>
+                <!-- Description -->
+                <div>
+                    <label class="block text-white font-semibold mb-3">Description</label>
+                    <textarea id="circleDescription" placeholder="What's your circle about?" rows="4" 
+                              class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-600 text-white placeholder-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-gray-500/20 transition-all duration-300 resize-none"></textarea>
                 </div>
 
-                <div class="form-group">
-                    <label>Circle Image or Color</label>
-                    <div class="image-upload">
-                        <div class="image-preview" id="imagePreview" onclick="document.getElementById('imageInput').click()">
-                            <span id="previewText">🌍</span>
+                <!-- Circle Image/Color -->
+                <div>
+                    <label class="block text-white font-semibold mb-6">Circle Image or Color</label>
+                    <div class="flex flex-col items-center space-y-6">
+                        <!-- Image Preview -->
+                        <div id="imagePreview" onclick="document.getElementById('imageInput').click()" 
+                             class="w-32 h-32 rounded-3xl bg-gray-700 flex items-center justify-center cursor-pointer hover:scale-105 transition-all duration-300 border-4 border-gray-600 overflow-hidden">
+                            <img id="previewIcon" src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Circle" class="w-12 h-12">
                         </div>
+                        
                         <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
-                        <button type="button" class="upload-btn" onclick="document.getElementById('imageInput').click()">
+                        
+                        <button type="button" onclick="document.getElementById('imageInput').click()" 
+                                class="px-6 py-2 rounded-xl border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-300">
                             Upload Image
                         </button>
-                        <p style="opacity: 0.7; text-align: center;">Or choose a color below</p>
-                        <div class="color-picker">
-                            <div class="color-option" style="background: linear-gradient(45deg, #ff6b9d, #ff8a80);" onclick="selectColor('#ff6b9d', '💖')"></div>
-                            <div class="color-option" style="background: linear-gradient(45deg, #64ffda, #81c784);" onclick="selectColor('#64ffda', '🌊')"></div>
-                            <div class="color-option" style="background: linear-gradient(45deg, #c471ed, #ba68c8);" onclick="selectColor('#c471ed', '🔮')"></div>
-                            <div class="color-option" style="background: linear-gradient(45deg, #ff8a80, #ffab91);" onclick="selectColor('#ff8a80', '🔥')"></div>
-                            <div class="color-option" style="background: linear-gradient(45deg, #81c784, #aed581);" onclick="selectColor('#81c784', '🌱')"></div>
+                        
+                        <p class="text-gray-400 text-center">Or choose a color below</p>
+                        
+                        <!-- Color Picker -->
+                        <div class="grid grid-cols-5 gap-4">
+                            <div class="color-option w-12 h-12 rounded-2xl cursor-pointer bg-gray-600" 
+                                 onclick="selectColor('#4b5563', 'https://api.iconify.design/mdi:heart.svg?color=white')"></div>
+                            <div class="color-option w-12 h-12 rounded-2xl cursor-pointer bg-gray-700" 
+                                 onclick="selectColor('#374151', 'https://api.iconify.design/mdi:waves.svg?color=white')"></div>
+                            <div class="color-option w-12 h-12 rounded-2xl cursor-pointer bg-gray-800" 
+                                 onclick="selectColor('#1f2937', 'https://api.iconify.design/mdi:crystal-ball.svg?color=white')"></div>
+                            <div class="color-option w-12 h-12 rounded-2xl cursor-pointer bg-slate-600" 
+                                 onclick="selectColor('#475569', 'https://api.iconify.design/mdi:fire.svg?color=white')"></div>
+                            <div class="color-option w-12 h-12 rounded-2xl cursor-pointer bg-zinc-600" 
+                                 onclick="selectColor('#52525b', 'https://api.iconify.design/mdi:leaf.svg?color=white')"></div>
                         </div>
                     </div>
                 </div>
 
-
-
-                <div class="form-group">
-                    <label>Circle ID (Auto-generated)</label>
-                    <div class="circle-id" id="circleId">circle-xxxxxxxxx</div>
+                <!-- Circle ID -->
+                <div>
+                    <label class="block text-white font-semibold mb-3">Circle ID (Auto-generated)</label>
+                    <div id="circleId" class="w-full px-4 py-3 rounded-xl bg-gray-800 border border-gray-600 text-gray-300 font-mono text-center text-lg">
+                        circle-xxxxxxxxx
+                    </div>
                 </div>
 
-                <button type="submit" class="btn-large">Create Circle</button>
+                <!-- Submit Button -->
+                <button type="submit" 
+                        class="w-full py-4 rounded-xl bg-gray-700 text-white font-bold text-lg hover:bg-gray-600 transition-all duration-300">
+                    Create Circle
+                </button>
             </form>
         </div>
-    </div>
+    </main>
 
     <script>
         let selectedColor = '#64ffda';
@@ -258,17 +156,15 @@
             return id;
         }
 
-        function selectColor(color, emoji) {
+        function selectColor(color, iconUrl) {
             selectedColor = color;
-            selectedEmoji = emoji;
+            selectedEmoji = iconUrl;
             uploadedImage = null;
             
             // Update preview
             const preview = document.getElementById('imagePreview');
-            const previewText = document.getElementById('previewText');
-            
-            preview.style.setProperty('--selected-color', `linear-gradient(45deg, ${color}, ${color}aa)`);
-            preview.innerHTML = `<span id="previewText">${emoji}</span>`;
+            preview.style.backgroundColor = color;
+            preview.innerHTML = `<img id="previewIcon" src="${iconUrl}" alt="Circle" class="w-12 h-12">`;
             
             // Update selected color option
             document.querySelectorAll('.color-option').forEach(option => {
@@ -333,7 +229,7 @@
 
         // Initialize
         generateCircleId();
-        selectColor('#64ffda', '🌍'); // Set default selection
+        selectColor('#374151', 'https://api.iconify.design/mdi:earth.svg?color=white'); // Set default selection
     </script>
 </body>
 </html>
