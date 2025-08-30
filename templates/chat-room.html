@@ -203,6 +203,13 @@
             showTypingIndicator(data.username, data.typing);
         });
 
+        socket.on('chat_history', function(data) {
+            console.log('Loading chat history:', data.messages.length, 'messages');
+            data.messages.forEach(message => {
+                addTextMessage(message);
+            });
+        });
+
         socket.on('dubbing_status', function(data) {
             // Only show status for requested dubs
         });

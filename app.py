@@ -10,12 +10,20 @@ from dotenv import load_dotenv
 import json
 import uuid
 from datetime import datetime
+from models import db, User, ChatMessage
 
 load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'the-circle-secret'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///the_circle.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
 socketio = SocketIO(app)
+
+with app.app_context():
+    db.create_all()
 
 # Initialize Murf clients
 dub_api_key = os.getenv('MURFDUB_API_KEY')
@@ -145,6 +153,14 @@ def handle_join_circle(data):
     username = data['username']
     language = data['language']
     
+    with app.app_context():
+        # Save/update user in database
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            user = User(username=username, language=language)
+            db.session.add(user)
+            db.session.commit()
+    
     join_room(room_id)
     user_languages[request.sid] = language
     
@@ -170,10 +186,45 @@ def handle_join_circle(data):
         'language': language
     })
     
-    if chat_messages[room_id]:
-        emit('chat_history', {
-            'messages': chat_messages[room_id][-50:]
-        })
+    with app.app_context():
+        # Load chat history from database
+        messages = ChatMessage.query.filter_by(room_id=room_id).order_by(ChatMessage.timestamp.desc()).limit(50).all()
+        print(f"[DB] Found {len(messages)} messages for room {room_id}")
+        
+        text_messages = []
+        voice_messages = []
+        
+        for msg in reversed(messages):
+            if msg.message_type == 'voice':
+                voice_messages.append({
+                    'speaker': msg.username,
+                    'audio_data': msg.audio_data,
+                    'language': msg.language,
+                    'timestamp': msg.timestamp.isoformat(),
+                    'message_id': msg.message_uuid,
+                    'source_language': msg.language,
+                    'format': 'audio/webm'
+                })
+            else:
+                text_messages.append({
+                    'id': msg.message_uuid,
+                    'username': msg.username,
+                    'message': msg.message,
+                    'timestamp': msg.timestamp.isoformat(),
+                    'language': msg.language
+                })
+        
+        if text_messages:
+            print(f"[DB] Sending {len(text_messages)} text messages to client")
+            emit('chat_history', {'messages': text_messages})
+        
+        if voice_messages:
+            print(f"[DB] Sending {len(voice_messages)} voice messages to client")
+            for voice_msg in voice_messages:
+                emit('voice_message', voice_msg)
+        
+        if not text_messages and not voice_messages:
+            print(f"[DB] No chat history found for room {room_id}")
     
     emit('user_joined', {
         'username': username,
@@ -214,8 +265,24 @@ def handle_meeting_audio(data):
         socketio.emit('error', {'message': 'Audio data too short or empty'}, room=request.sid)
         return
     
-    timestamp = datetime.now().isoformat()
     message_id = f"msg_{int(datetime.now().timestamp() * 1000)}"
+    
+    with app.app_context():
+        # Save voice message to database
+        voice_msg = ChatMessage(
+            room_id=room_id,
+            username=speaker_name,
+            message=None,
+            language=source_language,
+            message_uuid=message_id,
+            message_type='voice',
+            audio_data=audio_data
+        )
+        db.session.add(voice_msg)
+        db.session.commit()
+        print(f"[DB] Saved voice message: {speaker_name} in {room_id}")
+        
+        timestamp = voice_msg.timestamp.isoformat()
     
     print(f"[AUDIO] Received audio from {speaker_name}, size: {len(audio_data)} chars")
     
@@ -384,20 +451,29 @@ def handle_send_message(data):
         emit('error', {'message': 'Message cannot be empty'})
         return
     
-    # Use circle language if set, otherwise use profile language
     user_language = user_info.get('circle_language', user_info.get('language', 'en'))
+    message_id = str(uuid.uuid4())
     
-    message = {
-        'id': str(uuid.uuid4()),
-        'username': username,
-        'message': message_text,
-        'timestamp': datetime.now().isoformat(),
-        'language': user_language
-    }
-    
-    if room_id not in chat_messages:
-        chat_messages[room_id] = []
-    chat_messages[room_id].append(message)
+    with app.app_context():
+        # Save message to database
+        chat_msg = ChatMessage(
+            room_id=room_id,
+            username=username,
+            message=message_text,
+            language=user_language,
+            message_uuid=message_id
+        )
+        db.session.add(chat_msg)
+        db.session.commit()
+        print(f"[DB] Saved message: {username} in {room_id}: {message_text}")
+        
+        message = {
+            'id': message_id,
+            'username': username,
+            'message': message_text,
+            'timestamp': chat_msg.timestamp.isoformat(),
+            'language': user_language
+        }
     
     emit('new_message', message, room=room_id)
 
@@ -544,6 +620,7 @@ def handle_leave_circle():
             del user_languages[request.sid]
         if request.sid in user_sessions:
             del user_sessions[request.sid]
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)

@@ -1,5 +1,6 @@
 flask==2.3.3
 flask-socketio==5.3.0
+flask-sqlalchemy==3.0.5
 murf
 python-dotenv
 requests

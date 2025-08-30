@@ -2,3 +2,9 @@ venv/
 .env
 *-old.*
 *.backup
+instance/
+*.db
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
