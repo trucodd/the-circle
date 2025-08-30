@@ -14,29 +14,26 @@ from datetime import datetime
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'meeting-translator-secret'
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'the-circle-secret'
+socketio = SocketIO(app)
 
 # Initialize Murf clients
-api_key = os.getenv('MURF_API_KEY')
-if not api_key:
-    print("Warning: MURF_API_KEY not found")
-    murf_client = None
-    tts_client = None
+dub_api_key = os.getenv('MURFDUB_API_KEY')
+if not dub_api_key:
+    print("Warning: MURFDUB_API_KEY not found")
+    murf_dub_client = None
 else:
     try:
-        murf_client = MurfDub(api_key=api_key)
-        tts_client = Murf(api_key=api_key)
-        print(f"Murf clients initialized successfully")
+        murf_dub_client = MurfDub(api_key=dub_api_key)
+        print(f"MurfDub client initialized successfully")
     except Exception as e:
-        print(f"Murf client initialization error: {e}")
-        murf_client = None
-        tts_client = None
+        print(f"MurfDub client initialization error: {e}")
+        murf_dub_client = None
 
-# Store meeting data
+# Store circle data
 user_languages = {}
 active_rooms = {}
-meeting_transcripts = {}
+circle_transcripts = {}
 
 # Chat functionality
 chat_rooms = {}
@@ -46,16 +43,43 @@ user_sessions = {}
 # Dubbing API
 pending_jobs = {}
 
-# Language mapping for Murf API
-LANGUAGE_MAP = {
+# Language mapping for Murf Dubbing API
+DUBBING_LANGUAGE_MAP = {
     'en': 'en_US',
     'es': 'es_ES', 
     'fr': 'fr_FR',
+    'de': 'de_DE',
+    'it': 'it_IT',
+    'nl': 'nl_NL',
+    'pt': 'pt_BR',
+    'zh': 'zh_CN',
     'ja': 'ja_JP',
-    'hi': 'hi_IN'
+    'ko': 'ko_KR',
+    'hi': 'hi_IN',
+    'ta': 'ta_IN',
+    'bn': 'bn_IN',
+    'pl': 'pl_PL'
 }
 
-WEBHOOK_SECRET = "meeting-translator-webhook-secret"
+# Google Translate language codes
+TRANSLATE_LANGUAGE_MAP = {
+    'en': 'en',
+    'es': 'es',
+    'fr': 'fr',
+    'de': 'de',
+    'it': 'it',
+    'nl': 'nl',
+    'pt': 'pt',
+    'zh': 'zh',
+    'ja': 'ja',
+    'ko': 'ko',
+    'hi': 'hi',
+    'ta': 'ta',
+    'bn': 'bn',
+    'pl': 'pl'
+}
+
+WEBHOOK_SECRET = "the-circle-webhook-secret"
 
 # Murf API error handling
 def handle_murf_error(error, speaker_name, user_sid):
@@ -207,7 +231,7 @@ def handle_meeting_audio(data):
     }, room=room_id)
 
 def process_dubbing_for_user(audio_data, speaker_name, source_language, target_user, message_id=None):
-    if not murf_client:
+    if not murf_dub_client:
         socketio.emit('dubbing_error', {
             'error': 'Service unavailable',
             'speaker': speaker_name
@@ -229,14 +253,14 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                 temp_file.write(audio_bytes)
                 temp_file.flush()
             
-            target_locale = LANGUAGE_MAP.get(target_user['language'], 'en_US')
+            target_locale = DUBBING_LANGUAGE_MAP.get(target_user['language'], 'en_US')
             
             with open(temp_file_path, "rb") as audio_file:
-                response = murf_client.dubbing.jobs.create(
+                response = murf_dub_client.dubbing.jobs.create(
                     target_locales=[target_locale],
                     file_name=f"voice_{speaker_name}_{int(datetime.now().timestamp())}",
                     file=audio_file,
-                    priority="HIGH"
+                    priority="LOW"
                 )
                 
                 if hasattr(response, 'job_id'):
@@ -248,6 +272,8 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                         'created_at': datetime.now().isoformat(),
                         'message_id': message_id
                     }
+                    
+                    print(f"[DUBBING] Stored job info: {pending_jobs[response.job_id]}")
                     
                     print(f"[DUBBING] Job created: {response.job_id} for {speaker_name}")
                     socketio.emit('dubbing_status', {
@@ -282,8 +308,10 @@ def poll_job_status(job_id):
     
     while attempt < max_attempts:
         try:
-            if murf_client and job_id in pending_jobs:
-                status_response = murf_client.dubbing.jobs.get_status(job_id=job_id)
+            if murf_dub_client and job_id in pending_jobs:
+                print(f"[DUBBING] Polling job {job_id}, attempt {attempt + 1}")
+                status_response = murf_dub_client.dubbing.jobs.get_status(job_id=job_id)
+                print(f"[DUBBING] Status response: {status_response}")
                 
                 if hasattr(status_response, 'status'):
                     job_info = pending_jobs[job_id]
@@ -329,6 +357,7 @@ def poll_job_status(job_id):
                         del pending_jobs[job_id]
                         break
             
+            print(f"[DUBBING] Waiting 5 seconds before next poll...")
             time.sleep(5)
             attempt += 1
             
@@ -355,12 +384,15 @@ def handle_send_message(data):
         emit('error', {'message': 'Message cannot be empty'})
         return
     
+    # Use circle language if set, otherwise use profile language
+    user_language = user_info.get('circle_language', user_info.get('language', 'en'))
+    
     message = {
         'id': str(uuid.uuid4()),
         'username': username,
         'message': message_text,
         'timestamp': datetime.now().isoformat(),
-        'language': user_info['language']
+        'language': user_language
     }
     
     if room_id not in chat_messages:
@@ -405,16 +437,87 @@ def handle_get_pending_jobs():
 @socketio.on('request_dub')
 def handle_request_dub(data):
     message_id = data['message_id']
-    target_language = data['target_language']
     audio_data = data['audio_data']
     speaker_name = data['speaker_name']
     source_language = data['source_language']
+    
+    user_info = user_sessions.get(request.sid)
+    if not user_info:
+        return
+    
+    # Use circle language preference for dubbing
+    target_language = user_info.get('circle_language', user_info.get('language', 'en'))
     
     # Process dubbing for the requesting user only
     process_dubbing_for_user(audio_data, speaker_name, source_language, {
         'sid': request.sid,
         'language': target_language
     }, message_id)
+
+@socketio.on('set_circle_language')
+def handle_set_circle_language(data):
+    language = data['language']
+    user_info = user_sessions.get(request.sid)
+    
+    if not user_info:
+        emit('error', {'message': 'User not authenticated'})
+        return
+    
+    user_info['circle_language'] = language
+    user_sessions[request.sid] = user_info
+    
+    print(f"[CIRCLE_LANG] User {user_info['username']} set circle language to: {language}")
+    emit('circle_language_updated', {'language': language})
+
+@socketio.on('translate_text')
+def handle_translate_text(data):
+    text = data['text']
+    source_language = data.get('source_language', 'en')
+    message_id = data['message_id']
+    
+    user_info = user_sessions.get(request.sid)
+    if not user_info:
+        return
+    
+    target_language = user_info.get('circle_language', user_info.get('language', 'en'))
+    
+    print(f"[TRANSLATE] Text: {text}, Source: {source_language}, Target: {target_language}")
+    
+    if source_language == target_language:
+        emit('translated_text', {
+            'message_id': message_id,
+            'translated_text': text,
+            'audio_data': None,
+            'target_language': target_language
+        })
+        return
+    
+    try:
+        from deep_translator import GoogleTranslator
+        
+        source_lang = TRANSLATE_LANGUAGE_MAP.get(source_language, 'auto')
+        target_lang = TRANSLATE_LANGUAGE_MAP.get(target_language, 'en')
+        
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
+        translated_text = translator.translate(text)
+        
+        print(f"[TRANSLATE] Success: '{text}' -> '{translated_text}'")
+        
+        emit('translated_text', {
+            'message_id': message_id,
+            'translated_text': translated_text,
+            'audio_data': None,
+            'target_language': target_language
+        })
+        
+    except Exception as e:
+        print(f"[TRANSLATE] Failed: {str(e)}")
+        emit('translated_text', {
+            'message_id': message_id,
+            'translated_text': f"Translation failed: {text}",
+            'audio_data': None,
+            'target_language': target_language
+        })
 
 @socketio.on('leave_circle')
 def handle_leave_circle():
@@ -443,4 +546,4 @@ def handle_leave_circle():
             del user_sessions[request.sid]
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)

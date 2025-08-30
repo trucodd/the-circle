@@ -1,5 +1,6 @@
-flask
-flask-socketio
+flask==2.3.3
+flask-socketio==5.3.0
 murf
 python-dotenv
 requests
+deep-translator
