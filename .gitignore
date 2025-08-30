@@ -8,3 +8,21 @@ __pycache__/
 *.pyc
 *.pyo
 .DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# React frontend
+the-circle-frontend/node_modules/
+the-circle-frontend/dist/
+the-circle-frontend/.env.local
+the-circle-frontend/.env.development.local
+the-circle-frontend/.env.test.local
+the-circle-frontend/.env.production.local
+the-circle-frontend/npm-debug.log*
+the-circle-frontend/yarn-debug.log*
+the-circle-frontend/yarn-error.log*

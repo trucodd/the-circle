@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_cors import CORS
 import os
 import tempfile
 import base64
@@ -19,8 +20,11 @@ app.config['SECRET_KEY'] = 'the-circle-secret'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///the_circle.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Enable CORS for React frontend
+CORS(app, origins="*")
+
 db.init_app(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 with app.app_context():
     db.create_all()
@@ -110,42 +114,38 @@ def handle_murf_error(error, speaker_name, user_sid):
         'speaker': speaker_name
     }, room=user_sid)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Serve React app for all routes
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react_app(path):
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>The Circle</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <div id="root"></div>
+        <script>window.location.href = 'http://localhost:3000' + window.location.pathname;</script>
+    </body>
+    </html>
+    ''')
 
-@app.route('/room/<room_id>')
-def room(room_id):
-    return render_template('room.html', room_id=room_id)
+# API endpoints for React frontend
+@app.route('/api/health')
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'Backend is running'})
 
-@app.route('/dashboard')
-def dashboard():
-    return render_template('dashboard.html')
-
-@app.route('/create-circle')
-def create_circle():
-    return render_template('create-circle.html')
-
-@app.route('/chat/<room_id>')
-def chat_room(room_id):
-    # Get room data from URL params or default values
-    room_name = f"Circle {room_id.split('-')[-1]}"
-    circle_color = "#64ffda"
-    circle_emoji = "🌍"
-    
-    return render_template('chat-room.html', 
-                         room_id=room_id,
-                         room_name=room_name,
-                         circle_color=circle_color,
-                         circle_emoji=circle_emoji)
-
-@app.route('/profile')
-def profile():
-    return render_template('profile.html')
-
-@app.route('/user/<username>')
-def user_profile(username):
-    return render_template('user-profile.html', username=username)
+@app.route('/api/rooms/<room_id>')
+def get_room_info(room_id):
+    return jsonify({
+        'id': room_id,
+        'name': f"Circle {room_id.split('-')[-1]}",
+        'color': '#64ffda',
+        'emoji': '🌍'
+    })
 
 @socketio.on('join_circle')
 def handle_join_circle(data):
@@ -451,7 +451,7 @@ def handle_send_message(data):
         emit('error', {'message': 'Message cannot be empty'})
         return
     
-    user_language = user_info.get('circle_language', user_info.get('language', 'en'))
+    message_language = data.get('language') or user_info.get('circle_language', user_info.get('language', 'en'))
     message_id = str(uuid.uuid4())
     
     with app.app_context():
@@ -460,7 +460,7 @@ def handle_send_message(data):
             room_id=room_id,
             username=username,
             message=message_text,
-            language=user_language,
+            language=message_language,
             message_uuid=message_id
         )
         db.session.add(chat_msg)
@@ -472,7 +472,7 @@ def handle_send_message(data):
             'username': username,
             'message': message_text,
             'timestamp': chat_msg.timestamp.isoformat(),
-            'language': user_language
+            'language': message_language
         }
     
     emit('new_message', message, room=room_id)
@@ -516,13 +516,18 @@ def handle_request_dub(data):
     audio_data = data['audio_data']
     speaker_name = data['speaker_name']
     source_language = data['source_language']
+    target_language = data['target_language']  # Use target language from frontend
     
     user_info = user_sessions.get(request.sid)
     if not user_info:
         return
     
-    # Use circle language preference for dubbing
-    target_language = user_info.get('circle_language', user_info.get('language', 'en'))
+    print(f"[DUB REQUEST] User {user_info['username']} requested dubbing:")
+    print(f"  - Speaker: {speaker_name}")
+    print(f"  - Source Language: {source_language}")
+    print(f"  - Target Language: {target_language}")
+    print(f"  - Message ID: {message_id}")
+    print(f"  - Audio Data Size: {len(audio_data)} chars")
     
     # Process dubbing for the requesting user only
     process_dubbing_for_user(audio_data, speaker_name, source_language, {
