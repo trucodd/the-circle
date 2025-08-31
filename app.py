@@ -305,9 +305,12 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
         }, room=target_user['sid'])
         return
     
+    target_language = target_user['language']
+    print(f"[DUBBING] Processing for user with target language: {target_language}")
+    
     socketio.emit('dubbing_status', {
         'status': 'processing',
-        'message': f'Translating {speaker_name}\'s voice...',
+        'message': f'Translating {speaker_name}\'s voice to {target_language}...',
         'speaker': speaker_name
     }, room=target_user['sid'])
     
@@ -320,7 +323,8 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                 temp_file.write(audio_bytes)
                 temp_file.flush()
             
-            target_locale = DUBBING_LANGUAGE_MAP.get(target_user['language'], 'en_US')
+            target_locale = DUBBING_LANGUAGE_MAP.get(target_language, 'en_US')
+            print(f"[DUBBING] Using target locale: {target_locale} for language: {target_language}")
             
             with open(temp_file_path, "rb") as audio_file:
                 response = murf_dub_client.dubbing.jobs.create(
@@ -334,7 +338,7 @@ def process_dubbing_for_user(audio_data, speaker_name, source_language, target_u
                     pending_jobs[response.job_id] = {
                         'user_sid': target_user['sid'],
                         'speaker_name': speaker_name,
-                        'target_language': target_user['language'],
+                        'target_language': target_language,
                         'status': 'processing',
                         'created_at': datetime.now().isoformat(),
                         'message_id': message_id
@@ -390,27 +394,32 @@ def poll_job_status(job_id):
                             print(f"[DUBBING] Job {job_id} completed, downloading audio")
                             
                             # Download and convert audio to base64 for browser playback
-                            try:
-                                import requests
-                                audio_response = requests.get(download_url, timeout=30)
-                                if audio_response.status_code == 200:
-                                    audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
-                                    
-                                    socketio.emit('translated_audio', {
-                                        'audio_data': audio_base64,
-                                        'speaker': job_info['speaker_name'],
-                                        'target_language': job_info['target_language'],
-                                        'message_id': job_info.get('message_id')
-                                    }, room=job_info['user_sid'])
-                                else:
-                                    socketio.emit('dubbing_error', {
-                                        'error': 'Failed to download translated audio',
-                                        'speaker': job_info['speaker_name']
-                                    }, room=job_info['user_sid'])
-                            except Exception as e:
-                                print(f"Audio download error: {e}")
+                            download_success = False
+                            for retry in range(3):
+                                try:
+                                    import requests
+                                    audio_response = requests.get(download_url, timeout=30)
+                                    if audio_response.status_code == 200:
+                                        audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
+                                        
+                                        socketio.emit('translated_audio', {
+                                            'audio_data': audio_base64,
+                                            'speaker': job_info['speaker_name'],
+                                            'target_language': job_info['target_language'],
+                                            'message_id': job_info.get('message_id')
+                                        }, room=job_info['user_sid'])
+                                        download_success = True
+                                        break
+                                    else:
+                                        print(f"Download failed with status: {audio_response.status_code}")
+                                except Exception as e:
+                                    print(f"Audio download error (attempt {retry + 1}): {e}")
+                                    if retry < 2:
+                                        time.sleep(2)
+                            
+                            if not download_success:
                                 socketio.emit('dubbing_error', {
-                                    'error': 'Failed to process translated audio',
+                                    'error': 'Network error - please try again',
                                     'speaker': job_info['speaker_name']
                                 }, room=job_info['user_sid'])
                         
@@ -430,6 +439,12 @@ def poll_job_status(job_id):
             
         except Exception as e:
             print(f"Job polling error: {e}")
+            if "name resolution" in str(e).lower() or "network" in str(e).lower():
+                print(f"Network error, retrying in 10 seconds...")
+                time.sleep(10)
+                attempt += 1
+                continue
+            
             if job_id in pending_jobs:
                 job_info = pending_jobs[job_id]
                 handle_murf_error(e, job_info['speaker_name'], job_info['user_sid'])

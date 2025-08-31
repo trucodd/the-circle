@@ -57,7 +57,9 @@ const Dashboard = () => {
 
   const rejoinRoom = (roomId, language) => {
     const username = localStorage.getItem('userName') || 'User'
-    navigate(`/chat/${roomId}?username=${username}&language=${language}`)
+    // Fix old 'multi' language data
+    const validLanguage = (language === 'multi' || !language) ? 'en' : language
+    navigate(`/chat/${roomId}?username=${username}&language=${validLanguage}`)
   }
 
   const createRoomCard = (room, index) => {

@@ -8,7 +8,7 @@ const ChatRoom = () => {
   const navigate = useNavigate()
   
   const username = searchParams.get('username') || 'Anonymous'
-  const userLanguage = localStorage.getItem('userLanguage') || 'en'
+  const [userLanguage, setUserLanguage] = useState(searchParams.get('language') || 'en')
   const circleColor = '#64ffda'
   
   const [socket, setSocket] = useState(null)
@@ -220,7 +220,7 @@ const ChatRoom = () => {
   }
 
   const requestDub = (messageId, audioData, speakerName, sourceLanguage) => {
-    if (circleLanguage === sourceLanguage) {
+    if (userLanguage === sourceLanguage) {
       alert('This message is already in your preferred language')
       return
     }
@@ -242,7 +242,7 @@ const ChatRoom = () => {
         audio_data: audioData,
         speaker_name: speakerName,
         source_language: sourceLanguage,
-        target_language: circleLanguage
+        target_language: userLanguage
       })
     }
   }
@@ -274,13 +274,15 @@ const ChatRoom = () => {
       })
     )
     
-    // Update button to Play state
-    const dubBtn = document.querySelector(`[data-message-id="${data.message_id}"] .dub-btn`)
-    if (dubBtn) {
-      dubBtn.innerHTML = '<img src="https://api.iconify.design/mdi:play.svg?color=white" alt="Play" class="w-3 h-3 inline"> Play'
-      dubBtn.disabled = false
-      dubBtn.classList.remove('opacity-50', 'cursor-not-allowed')
-      dubBtn.onclick = () => playAudio(`dubbed_${dubKey}`)
+    // Update button to Play state only if this dub is for current user's language
+    if (data.target_language === userLanguage) {
+      const dubBtn = document.querySelector(`[data-message-id="${data.message_id}"] .dub-btn`)
+      if (dubBtn) {
+        dubBtn.innerHTML = '<img src="https://api.iconify.design/mdi:play.svg?color=white" alt="Play" class="w-3 h-3 inline"> Play'
+        dubBtn.disabled = false
+        dubBtn.classList.remove('opacity-50', 'cursor-not-allowed')
+        dubBtn.onclick = () => playAudio(`dubbed_${dubKey}`)
+      }
     }
     
     // Add dubbed audio element with language-specific ID
@@ -435,8 +437,8 @@ const ChatRoom = () => {
                     🎤 {langName}
                   </span>
                   {!isOwn && (() => {
-                    const hasCurrentLanguageDub = data.dubbed_versions && data.dubbed_versions[circleLanguage]
-                    const dubKey = `${data.message_id}_${circleLanguage}`
+                    const hasCurrentLanguageDub = data.dubbed_versions && data.dubbed_versions[userLanguage]
+                    const dubKey = `${data.message_id}_${userLanguage}`
                     
                     return (
                       <button 
@@ -521,9 +523,17 @@ const ChatRoom = () => {
           
           <div className="flex items-center space-x-2">
             <select 
-              value={circleLanguage}
-              onChange={handleCircleLanguageChange}
+              value={userLanguage}
+              onChange={(e) => {
+                const newLang = e.target.value
+                setUserLanguage(newLang)
+                // Update URL
+                const newUrl = new URL(window.location)
+                newUrl.searchParams.set('language', newLang)
+                window.history.replaceState({}, '', newUrl)
+              }}
               className="px-3 py-1 rounded-lg bg-gray-800 border border-gray-600 text-white text-sm focus:border-gray-500 transition-all"
+              title="Your Language Preference"
             >
               <option value="en" className="bg-gray-800 text-white">🇺🇸 English</option>
               <option value="es" className="bg-gray-800 text-white">🇪🇸 Spanish</option>

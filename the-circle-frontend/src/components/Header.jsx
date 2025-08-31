@@ -46,7 +46,7 @@ const Header = ({ showAuth = false, showProfile = false, onLogin, onRegister, on
             </div>
           )}
           
-          {showProfile && isLoggedIn && (
+          {(showProfile || (showAuth && isLoggedIn)) && (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3 cursor-pointer" onClick={handleProfileClick}>
                 <div className="w-10 h-10 rounded-2xl bg-gray-700 flex items-center justify-center font-bold text-white hover:bg-gray-600 transition-colors">
@@ -64,6 +64,8 @@ const Header = ({ showAuth = false, showProfile = false, onLogin, onRegister, on
               </button>
             </div>
           )}
+          
+
         </div>
       </div>
     </header>

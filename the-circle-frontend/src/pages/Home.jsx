@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Modal from '../components/Modal'
@@ -7,6 +7,12 @@ const Home = () => {
   const navigate = useNavigate()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  
+  useEffect(() => {
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+      navigate('/dashboard')
+    }
+  }, [])
   const [formData, setFormData] = useState({
     username: '',
     language: 'en',
