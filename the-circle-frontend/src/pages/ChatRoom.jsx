@@ -9,6 +9,7 @@ const ChatRoom = () => {
   
   const username = searchParams.get('username') || 'Anonymous'
   const [userLanguage, setUserLanguage] = useState(searchParams.get('language') || 'en')
+  const isBot = searchParams.get('bot') === 'echo'
   const circleColor = '#64ffda'
   
   const [socket, setSocket] = useState(null)
@@ -29,7 +30,8 @@ const ChatRoom = () => {
   const typingTimerRef = useRef(null)
 
   useEffect(() => {
-    const newSocket = createSocket()
+    if (!isBot) {
+      const newSocket = createSocket()
     
     newSocket.on('connect', () => {
       console.log('Connected to server')
@@ -100,10 +102,15 @@ const ChatRoom = () => {
       })
     })
 
-    return () => {
-      newSocket.disconnect()
+      return () => {
+        newSocket.disconnect()
+      }
+    } else {
+      // Bot mode - no socket connection needed
+      setParticipantCount(2) // User + Bot
+      addStatusMessage('🤖 EchoBot joined the chat')
     }
-  }, [roomId, username, userLanguage])
+  }, [roomId, username, userLanguage, isBot])
 
   useEffect(() => {
     scrollToBottom()
@@ -348,7 +355,7 @@ const ChatRoom = () => {
 
   const renderTextMessage = (message) => {
     const isOwn = message.username === username
-    const needsTranslation = !isOwn && message.language && message.language !== circleLanguage
+    const needsTranslation = !isOwn && message.language && message.language !== userLanguage
     const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     
     return (
@@ -573,11 +580,13 @@ const ChatRoom = () => {
           </div>
         </div>
         
-        {messages.map(message => 
-          message.type === 'status' ? renderStatusMessage(message) : renderTextMessage(message)
-        )}
-        
-        {voiceMessages.map(renderVoiceMessage)}
+        {[...messages, ...voiceMessages]
+          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+          .map(message => {
+            if (message.type === 'status') return renderStatusMessage(message)
+            if (message.message_id) return renderVoiceMessage(message)
+            return renderTextMessage(message)
+          })}
       </div>
 
       {/* Typing Indicator */}
