@@ -28,11 +28,24 @@ const ChatRoom = () => {
   const [mediaRecorder, setMediaRecorder] = useState(null)
   const [typingIndicator, setTypingIndicator] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [circleIdText, setCircleIdText] = useState('')
+  const [circleName, setCircleName] = useState('')
   
   const messagesAreaRef = useRef(null)
   const typingTimerRef = useRef(null)
 
   useEffect(() => {
+    // Get circle name from localStorage or generate one
+    if (!isBot) {
+      const joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
+      const currentRoom = joinedRooms.find(room => room.id === roomId)
+      if (currentRoom && currentRoom.name) {
+        setCircleName(currentRoom.name)
+      } else {
+        setCircleName(`Circle ${roomId.split('-')[1] || roomId}`)
+      }
+    }
+    
     const newSocket = createSocket()
     
     newSocket.on('connect', () => {
@@ -273,9 +286,6 @@ const ChatRoom = () => {
       dubBtn.classList.add('opacity-50', 'cursor-not-allowed')
     }
     
-    // Show status message
-    addStatusMessage(`🌍 Starting voice translation for ${speakerName}...`)
-    
     if (socket) {
       socket.emit('request_dub', {
         message_id: messageId,
@@ -441,12 +451,9 @@ const ChatRoom = () => {
 
   const copyCircleId = () => {
     navigator.clipboard.writeText(roomId).then(() => {
-      // Show copied feedback
-      const titleElement = document.querySelector('h2')
-      const originalText = titleElement.textContent
-      titleElement.textContent = 'Copied!'
+      setCircleIdText('Copied!')
       setTimeout(() => {
-        titleElement.textContent = originalText
+        setCircleIdText('')
       }, 1000)
     }).catch(() => {
       alert('Circle ID: ' + roomId)
@@ -671,15 +678,23 @@ const ChatRoom = () => {
               {isBot ? '🤖' : '🌍'}
             </div>
             <div>
-              <h2 
-                onClick={isBot ? undefined : copyCircleId}
-                className={`text-lg font-bold text-white ${isBot ? '' : 'cursor-pointer hover:text-gray-300'} transition-colors`}
-                title={isBot ? 'Chat with Translation Bot' : 'Tap to copy Circle ID'}
-              >
-                {isBot ? 'Translation Bot Chat' : roomId}
+              <h2 className="text-lg font-bold text-white">
+                {isBot ? 'Translation Bot' : circleName}
               </h2>
               <p className="text-sm text-gray-400 font-medium">
-                {isBot ? 'Translation Bot' : `${participantCount} participants`}
+                {isBot ? 'Translation Assistant' : (
+                  <>
+                    <span 
+                      onClick={copyCircleId}
+                      className="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition-colors"
+                      title="Tap to copy Circle ID"
+                    >
+                      {circleIdText || roomId}
+                    </span>
+                    <span className="mx-2">•</span>
+                    <span>{participantCount} participants</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -709,7 +724,14 @@ const ChatRoom = () => {
             
             <button 
               onClick={leaveCircle}
-              className="px-4 py-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all duration-300"
+              className="sm:hidden w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center text-red-400 transition-all duration-300"
+              title="Leave Circle"
+            >
+              <img src="https://api.iconify.design/mdi:exit-to-app.svg?color=red" alt="Leave" className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={leaveCircle}
+              className="hidden sm:block px-4 py-2 rounded-xl bg-red-600/20 text-red-400 hover:bg-red-600/30 transition-all duration-300"
             >
               Leave
             </button>
@@ -721,7 +743,7 @@ const ChatRoom = () => {
                   navigate('/')
                 }
               }}
-              className="px-4 py-2 rounded-xl bg-white/10 text-gray-300 hover:bg-white/20 transition-all duration-300"
+              className="hidden sm:block px-4 py-2 rounded-xl bg-white/10 text-gray-300 hover:bg-white/20 transition-all duration-300"
             >
               ← Back
             </button>
@@ -786,9 +808,15 @@ const ChatRoom = () => {
               ➤
             </button>
             <button 
-              onClick={leaveCircle}
-              className="sm:hidden w-10 h-10 rounded-full bg-red-600/20 hover:bg-red-600/30 flex items-center justify-center text-red-400 transition-all duration-300"
-              title="Leave Circle"
+              onClick={() => {
+                if (localStorage.getItem('isLoggedIn') === 'true') {
+                  navigate('/dashboard')
+                } else {
+                  navigate('/')
+                }
+              }}
+              className="sm:hidden w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 transition-all duration-300"
+              title="Back to Dashboard"
             >
               ✕
             </button>
