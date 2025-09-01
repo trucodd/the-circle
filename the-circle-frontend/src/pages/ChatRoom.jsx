@@ -82,7 +82,14 @@ const ChatRoom = () => {
     })
 
     newSocket.on('voice_message', (data) => {
-      setVoiceMessages(prev => [...prev, data])
+      setVoiceMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(msg => msg.message_id === data.message_id)
+        if (exists) {
+          return prev
+        }
+        return [...prev, data]
+      })
     })
 
     newSocket.on('translated_audio', (data) => {

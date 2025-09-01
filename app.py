@@ -227,7 +227,7 @@ def handle_join_circle(data):
         if voice_messages:
             print(f"[DB] Sending {len(voice_messages)} voice messages to client")
             for voice_msg in voice_messages:
-                emit('voice_message', voice_msg)
+                emit('voice_message', voice_msg, room=request.sid)
         
         if not text_messages and not voice_messages:
             print(f"[DB] No chat history found for room {room_id}")
