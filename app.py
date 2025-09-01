@@ -106,6 +106,8 @@ def handle_murf_error(error, speaker_name, user_sid):
         user_friendly_msg = "No speech detected in audio"
     elif "SOURCE_LANGUAGE_MISMATCH" in error_msg:
         user_friendly_msg = "Source language mismatch"
+    elif "504" in error_msg or "Gateway Time-out" in error_msg or "timeout" in error_msg.lower():
+        user_friendly_msg = "Translation service temporarily unavailable - please try again"
     elif "SERVER_ERROR" in error_msg:
         user_friendly_msg = "Translation server error"
     
@@ -152,6 +154,8 @@ def handle_join_circle(data):
     room_id = data['room_id']
     username = data['username']
     language = data['language']
+    bot_language = data.get('bot_language')
+    is_bot_mode = 'translationbot-' in room_id
     
     with app.app_context():
         # Save/update user in database
@@ -167,7 +171,9 @@ def handle_join_circle(data):
     user_sessions[request.sid] = {
         'username': username,
         'room_id': room_id,
-        'language': language
+        'language': language,
+        'is_bot_mode': is_bot_mode,
+        'bot_language': bot_language
     }
     
     if room_id not in active_rooms:
@@ -226,11 +232,13 @@ def handle_join_circle(data):
         if not text_messages and not voice_messages:
             print(f"[DB] No chat history found for room {room_id}")
     
-    emit('user_joined', {
-        'username': username,
-        'language': language,
-        'users': active_rooms[room_id]
-    }, room=room_id)
+    # Only announce user joins for regular circles, not Translation Bot rooms
+    if not is_bot_mode:
+        emit('user_joined', {
+            'username': username,
+            'language': language,
+            'users': active_rooms[room_id]
+        }, room=room_id)
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -296,6 +304,11 @@ def handle_meeting_audio(data):
         'source_language': source_language,
         'format': data.get('format', 'audio/webm')
     }, room=room_id)
+    
+    # Translation Bot voice response - only in Translation Bot rooms
+    if user_info.get('is_bot_mode', False) and 'translationbot-' in room_id:
+        bot_language = user_info.get('bot_language', 'es')
+        socketio.start_background_task(handle_translation_bot_voice_response, audio_data, source_language, bot_language, room_id, speaker_name, message_id)
 
 def process_dubbing_for_user(audio_data, speaker_name, source_language, target_user, message_id=None):
     if not murf_dub_client:
@@ -439,9 +452,12 @@ def poll_job_status(job_id):
             
         except Exception as e:
             print(f"Job polling error: {e}")
-            if "name resolution" in str(e).lower() or "network" in str(e).lower():
-                print(f"Network error, retrying in 10 seconds...")
-                time.sleep(10)
+            error_str = str(e).lower()
+            
+            # Handle network errors and timeouts
+            if any(keyword in error_str for keyword in ["504", "gateway timeout", "timeout", "name resolution", "network", "connection"]):
+                print(f"Network/timeout error, retrying in 15 seconds...")
+                time.sleep(15)
                 attempt += 1
                 continue
             
@@ -461,6 +477,7 @@ def handle_send_message(data):
     room_id = user_info['room_id']
     username = user_info['username']
     message_text = data.get('message', '').strip()
+    is_bot_mode = user_info.get('is_bot_mode', False)
     
     if not message_text:
         emit('error', {'message': 'Message cannot be empty'})
@@ -491,6 +508,11 @@ def handle_send_message(data):
         }
     
     emit('new_message', message, room=room_id)
+    
+    # Translation Bot response - only in Translation Bot rooms
+    if is_bot_mode and 'translationbot-' in room_id:
+        bot_language = user_info.get('bot_language', 'es')
+        socketio.start_background_task(handle_translation_bot_response, message_text, message_language, bot_language, room_id)
 
 @socketio.on('typing')
 def handle_typing(data):
@@ -640,6 +662,84 @@ def handle_leave_circle():
             del user_languages[request.sid]
         if request.sid in user_sessions:
             del user_sessions[request.sid]
+
+
+def handle_translation_bot_response(message_text, source_language, bot_language, room_id):
+    import time
+    time.sleep(1)  # Simulate typing delay
+    
+    try:
+        if source_language != bot_language:
+            from deep_translator import GoogleTranslator
+            source_lang = TRANSLATE_LANGUAGE_MAP.get(source_language, 'auto')
+            target_lang = TRANSLATE_LANGUAGE_MAP.get(bot_language, 'en')
+            translator = GoogleTranslator(source=source_lang, target=target_lang)
+            bot_response = translator.translate(message_text)
+        else:
+            bot_response = message_text
+        
+        bot_message_id = str(uuid.uuid4())
+        
+        with app.app_context():
+            # Save bot message to database
+            bot_msg = ChatMessage(
+                room_id=room_id,
+                username='Translation Bot',
+                message=bot_response,
+                language=bot_language,
+                message_uuid=bot_message_id
+            )
+            db.session.add(bot_msg)
+            db.session.commit()
+            
+            bot_message = {
+                'id': bot_message_id,
+                'username': 'Translation Bot',
+                'message': bot_response,
+                'timestamp': bot_msg.timestamp.isoformat(),
+                'language': bot_language
+            }
+        
+        socketio.emit('new_message', bot_message, room=room_id)
+        
+    except Exception as e:
+        print(f"Translation Bot text response error: {e}")
+
+def handle_translation_bot_voice_response(audio_data, source_language, bot_language, room_id, original_speaker, original_message_id):
+    import time
+    time.sleep(1.5)  # Simulate processing delay
+    
+    print(f"[TRANSLATION_BOT] Processing voice message from {original_speaker}")
+    print(f"[TRANSLATION_BOT] Audio data size: {len(audio_data)} chars")
+    
+    bot_message_id = f"bot_voice_{int(datetime.now().timestamp() * 1000)}"
+    
+    # Always echo back the original audio first (so it's playable)
+    with app.app_context():
+        bot_voice_msg = ChatMessage(
+            room_id=room_id,
+            username='Translation Bot',
+            message=None,
+            language=source_language,
+            message_uuid=bot_message_id,
+            message_type='voice',
+            audio_data=audio_data
+        )
+        db.session.add(bot_voice_msg)
+        db.session.commit()
+        timestamp = bot_voice_msg.timestamp.isoformat()
+    
+    # Emit the original audio as Translation Bot message (playable with dub option)
+    socketio.emit('voice_message', {
+        'speaker': 'Translation Bot',
+        'audio_data': audio_data,
+        'language': source_language,
+        'timestamp': timestamp,
+        'message_id': bot_message_id,
+        'source_language': source_language,
+        'format': 'audio/webm'
+    }, room=room_id)
+
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { createSocket } from '../utils/socket'
+import Modal from '../components/Modal'
 
 const ChatRoom = () => {
   const { roomId } = useParams()
@@ -9,8 +10,10 @@ const ChatRoom = () => {
   
   const username = searchParams.get('username') || 'Anonymous'
   const [userLanguage, setUserLanguage] = useState(searchParams.get('language') || 'en')
+  const [botLanguage, setBotLanguage] = useState(searchParams.get('botlang') || 'es')
   const isBot = searchParams.get('bot') === 'echo'
   const circleColor = '#64ffda'
+  const [showBotLangModal, setShowBotLangModal] = useState(false)
   
   const [socket, setSocket] = useState(null)
   const [messages, setMessages] = useState([])
@@ -30,8 +33,7 @@ const ChatRoom = () => {
   const typingTimerRef = useRef(null)
 
   useEffect(() => {
-    if (!isBot) {
-      const newSocket = createSocket()
+    const newSocket = createSocket()
     
     newSocket.on('connect', () => {
       console.log('Connected to server')
@@ -48,7 +50,8 @@ const ChatRoom = () => {
     newSocket.emit('join_circle', {
       room_id: roomId,
       username: username,
-      language: userLanguage
+      language: userLanguage,
+      bot_language: isBot ? botLanguage : undefined
     })
 
     // Socket event handlers
@@ -95,20 +98,34 @@ const ChatRoom = () => {
       const dubBtns = document.querySelectorAll('.dub-btn')
       dubBtns.forEach(btn => {
         if (btn.textContent.includes('Dubbing')) {
-          btn.innerHTML = '<img src="https://api.iconify.design/mdi:translate.svg?color=white" alt="Translate" class="w-3 h-3 inline"> Dub'
+          // Reset based on speaker type
+          const messageDiv = btn.closest('[data-message-id]')
+          const isTranslationBotMessage = messageDiv && messageDiv.querySelector('.text-xs.font-semibold')?.textContent === 'Translation Bot'
+          
+          if (isTranslationBotMessage) {
+            btn.innerHTML = '<img src="https://api.iconify.design/mdi:robot.svg?color=white" alt="Dub" class="w-3 h-3 inline"> Dub'
+          } else {
+            btn.innerHTML = '<img src="https://api.iconify.design/mdi:translate.svg?color=white" alt="Translate" class="w-3 h-3 inline"> Dub'
+          }
           btn.disabled = false
           btn.classList.remove('opacity-50', 'cursor-not-allowed')
         }
       })
     })
 
+    newSocket.on('dubbing_status', (data) => {
+      if (data.speaker === 'EchoBot') {
+        addStatusMessage(`🤖 ${data.message}`)
+      }
+    })
+
       return () => {
         newSocket.disconnect()
       }
-    } else {
-      // Bot mode - no socket connection needed
+    
+    if (isBot) {
       setParticipantCount(2) // User + Bot
-      addStatusMessage('🤖 EchoBot joined the chat')
+      addStatusMessage('🤖 Translation Bot joined the chat')
     }
   }, [roomId, username, userLanguage, isBot])
 
@@ -133,13 +150,17 @@ const ChatRoom = () => {
   }
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !socket) return
+    if (!messageInput.trim()) return
+    
+    const message = messageInput.trim()
+    setMessageInput('')
+    
+    if (!socket) return
     
     socket.emit('send_message', { 
-      message: messageInput.trim(),
+      message: message,
       language: circleLanguage
     })
-    setMessageInput('')
     
     if (isTyping) {
       socket.emit('typing', { typing: false })
@@ -148,6 +169,7 @@ const ChatRoom = () => {
   }
 
   const handleTyping = () => {
+    if (isBot) return // No typing indicator in bot mode
     if (!socket) return
     
     if (!isTyping) {
@@ -189,6 +211,7 @@ const ChatRoom = () => {
           const reader = new FileReader()
           reader.onload = function() {
             const audioData = reader.result.split(',')[1]
+            const messageId = `voice_${Date.now()}`
             
             if (socket) {
               socket.emit('audio_data', {
@@ -227,8 +250,18 @@ const ChatRoom = () => {
   }
 
   const requestDub = (messageId, audioData, speakerName, sourceLanguage) => {
-    if (userLanguage === sourceLanguage) {
-      alert('This message is already in your preferred language')
+    let targetLanguage
+    
+    if (isBot) {
+      // EchoBot room: always dub to bot's language
+      targetLanguage = botLanguage
+    } else {
+      // Regular circle: dub to user's language
+      targetLanguage = userLanguage
+    }
+    
+    if (targetLanguage === sourceLanguage) {
+      alert('This message is already in the target language')
       return
     }
     
@@ -249,18 +282,78 @@ const ChatRoom = () => {
         audio_data: audioData,
         speaker_name: speakerName,
         source_language: sourceLanguage,
-        target_language: userLanguage
+        target_language: targetLanguage
       })
+    } else {
+      addStatusMessage('Dubbing not available in demo mode')
+      if (dubBtn) {
+        dubBtn.innerHTML = '<img src="https://api.iconify.design/mdi:translate.svg?color=white" alt="Translate" class="w-3 h-3 inline"> Dub'
+        dubBtn.disabled = false
+        dubBtn.classList.remove('opacity-50', 'cursor-not-allowed')
+      }
     }
   }
 
-  const translateMessage = (messageId, text, sourceLanguage) => {
-    if (socket) {
-      socket.emit('translate_text', {
-        message_id: messageId,
-        text: text,
-        source_language: sourceLanguage
-      })
+  const speakText = (text, language) => {
+    if ('speechSynthesis' in window) {
+      try {
+        // Stop any ongoing speech
+        speechSynthesis.cancel()
+        
+        const utterance = new SpeechSynthesisUtterance(text)
+        utterance.lang = language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : language === 'fr' ? 'fr-FR' : language === 'de' ? 'de-DE' : language === 'ja' ? 'ja-JP' : language === 'hi' ? 'hi-IN' : 'en-US'
+        utterance.rate = 0.9
+        utterance.pitch = 1
+        utterance.volume = 0.8
+        
+        utterance.onerror = (event) => {
+          console.error('Speech synthesis error:', event)
+        }
+        
+        speechSynthesis.speak(utterance)
+      } catch (error) {
+        console.error('Text-to-speech failed:', error)
+        alert('Text-to-speech is not available in your browser')
+      }
+    } else {
+      alert('Text-to-speech is not supported in your browser')
+    }
+  }
+
+  const translateMessage = async (messageId, text, sourceLanguage) => {
+    if (isBot) {
+      // Bot mode - translate to user's preferred language
+      try {
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLanguage}|${userLanguage}`)
+        const data = await response.json()
+        
+        const translatedText = data.responseData?.translatedText || `[Translation unavailable] ${text}`
+        
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, translated_text: translatedText }
+              : msg
+          )
+        )
+      } catch (error) {
+        console.error('Translation failed:', error)
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === messageId 
+              ? { ...msg, translated_text: `[Translation failed] ${text}` }
+              : msg
+          )
+        )
+      }
+    } else {
+      if (socket) {
+        socket.emit('translate_text', {
+          message_id: messageId,
+          text: text,
+          source_language: sourceLanguage
+        })
+      }
     }
   }
 
@@ -281,11 +374,18 @@ const ChatRoom = () => {
       })
     )
     
-    // Update button to Play state only if this dub is for current user's language
-    if (data.target_language === userLanguage) {
-      const dubBtn = document.querySelector(`[data-message-id="${data.message_id}"] .dub-btn`)
-      if (dubBtn) {
-        dubBtn.innerHTML = '<img src="https://api.iconify.design/mdi:play.svg?color=white" alt="Play" class="w-3 h-3 inline"> Play'
+    // Update button based on speaker and target language
+    const dubBtn = document.querySelector(`[data-message-id="${data.message_id}"] .dub-btn`)
+    if (dubBtn) {
+      // Check if this is the expected target language for this user/context
+      const expectedTargetLang = isBot ? botLanguage : userLanguage
+      
+      if (data.target_language === expectedTargetLang) {
+        // For Translation Bot messages, show "Dubbed" when complete
+        const buttonText = data.speaker_name === 'Translation Bot' ? 'Dubbed' : 'Play'
+        const iconName = data.speaker_name === 'Translation Bot' ? 'robot' : 'play'
+        
+        dubBtn.innerHTML = `<img src="https://api.iconify.design/mdi:${iconName}.svg?color=white" alt="${buttonText}" class="w-3 h-3 inline"> ${buttonText}`
         dubBtn.disabled = false
         dubBtn.classList.remove('opacity-50', 'cursor-not-allowed')
         dubBtn.onclick = () => playAudio(`dubbed_${dubKey}`)
@@ -356,6 +456,7 @@ const ChatRoom = () => {
   const renderTextMessage = (message) => {
     const isOwn = message.username === username
     const needsTranslation = !isOwn && message.language && message.language !== userLanguage
+    const isBotMessage = isBot && message.username === 'Translation Bot'
     const time = new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
     
     return (
@@ -363,11 +464,17 @@ const ChatRoom = () => {
         <div className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
           {!isOwn && (
             <div 
-              onClick={() => navigate(`/user/${message.username}`)}
+              onClick={() => {
+                if (isBot && message.username === 'Translation Bot') {
+                  setShowBotLangModal(true)
+                } else {
+                  navigate(`/user/${message.username}`)
+                }
+              }}
               className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 cursor-pointer hover:bg-gray-500 transition-colors"
-              title={`View ${message.username}'s profile`}
+              title={isBot && message.username === 'Translation Bot' ? 'Change bot language' : `View ${message.username}'s profile`}
             >
-              {message.username.charAt(0).toUpperCase()}
+              {message.username === 'Translation Bot' ? '🤖' : message.username.charAt(0).toUpperCase()}
             </div>
           )}
           <div className={`message-bubble rounded-2xl px-4 py-2 ${isOwn ? 'own' : ''}`}>
@@ -375,13 +482,14 @@ const ChatRoom = () => {
               <div className="text-xs font-semibold text-gray-300 mb-1">{message.username}</div>
             )}
             <div className="text-white">{message.message}</div>
+
             {message.translated_text && (
               <div className="text-blue-200 mt-2 p-2 bg-blue-900/20 rounded-lg border border-blue-500/30">
                 <div className="text-xs text-blue-300 mb-1">🌍 Translated:</div>
                 <div>{message.translated_text}</div>
               </div>
             )}
-            {needsTranslation && !message.translated_text && (
+            {needsTranslation && !message.translated_text && !isBotMessage && (
               <div className="mt-2 flex items-center gap-2">
                 <button 
                   onClick={() => translateMessage(message.id, message.message, message.language)}
@@ -392,6 +500,18 @@ const ChatRoom = () => {
                 </button>
               </div>
             )}
+            {isBotMessage && (
+              <div className="mt-2 flex items-center gap-2">
+                <button 
+                  onClick={() => speakText(message.message, message.language)}
+                  className="text-xs px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition-all duration-300 flex items-center gap-1"
+                >
+                  <img src="https://api.iconify.design/mdi:volume-high.svg?color=white" alt="Speak" className="w-3 h-3" />
+                  Listen
+                </button>
+              </div>
+            )}
+
             <div className="text-xs text-gray-400 mt-1">{time}</div>
           </div>
           {isOwn && (
@@ -420,11 +540,17 @@ const ChatRoom = () => {
         <div className={`flex items-end space-x-2 max-w-xs lg:max-w-md ${isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
           {!isOwn && (
             <div 
-              onClick={() => navigate(`/user/${data.speaker}`)}
+              onClick={() => {
+                if (isBot && data.speaker === 'Translation Bot') {
+                  setShowBotLangModal(true)
+                } else {
+                  navigate(`/user/${data.speaker}`)
+                }
+              }}
               className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 cursor-pointer hover:bg-gray-500 transition-colors"
-              title={`View ${data.speaker}'s profile`}
+              title={isBot && data.speaker === 'Translation Bot' ? 'Change bot language' : `View ${data.speaker}'s profile`}
             >
-              {data.speaker.charAt(0).toUpperCase()}
+              {data.speaker === 'Translation Bot' ? '🤖' : data.speaker.charAt(0).toUpperCase()}
             </div>
           )}
           <div className={`message-bubble voice rounded-2xl px-4 py-3 ${isOwn ? 'own' : ''}`}>
@@ -444,24 +570,50 @@ const ChatRoom = () => {
                     🎤 {langName}
                   </span>
                   {!isOwn && (() => {
-                    const hasCurrentLanguageDub = data.dubbed_versions && data.dubbed_versions[userLanguage]
-                    const dubKey = `${data.message_id}_${userLanguage}`
-                    
-                    return (
-                      <button 
-                        onClick={() => {
-                          if (hasCurrentLanguageDub) {
-                            playAudio(`dubbed_${dubKey}`)
-                          } else {
-                            requestDub(data.message_id, data.audio_data, data.speaker, data.language)
-                          }
-                        }}
-                        className="text-xs px-2 py-1 rounded-lg bg-blue-900/20 border border-blue-500/30 text-blue-200 hover:text-blue-100 transition-all duration-300 flex items-center gap-1 dub-btn"
-                      >
-                        <img src={`https://api.iconify.design/mdi:${hasCurrentLanguageDub ? 'play' : 'translate'}.svg?color=white`} alt={hasCurrentLanguageDub ? 'Play' : 'Translate'} className="w-3 h-3" />
-                        {hasCurrentLanguageDub ? 'Play' : 'Dub'}
-                      </button>
-                    )
+                    if (data.speaker === 'Translation Bot') {
+                      // Translation Bot message - dub user's voice to bot's language
+                      const targetLang = botLanguage
+                      const hasCurrentLanguageDub = data.dubbed_versions && data.dubbed_versions[targetLang]
+                      const dubKey = `${data.message_id}_${targetLang}`
+                      
+                      return (
+                        <button 
+                          onClick={() => {
+                            if (hasCurrentLanguageDub) {
+                              playAudio(`dubbed_${dubKey}`)
+                            } else {
+                              // For Translation Bot, use its audio data (which is the user's voice) and user's language as source
+                              requestDub(data.message_id, data.audio_data, data.speaker, userLanguage)
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded-lg bg-purple-900/20 border border-purple-500/30 text-purple-200 hover:text-purple-100 transition-all duration-300 flex items-center gap-1 dub-btn"
+                        >
+                          <img src={`https://api.iconify.design/mdi:${hasCurrentLanguageDub ? 'play' : 'robot'}.svg?color=white`} alt={hasCurrentLanguageDub ? 'Play' : 'Dub'} className="w-3 h-3" />
+                          {hasCurrentLanguageDub ? 'Dubbed' : 'Dub'}
+                        </button>
+                      )
+                    } else {
+                      // Regular user message - dub to user's language
+                      const targetLang = isBot ? botLanguage : userLanguage
+                      const hasCurrentLanguageDub = data.dubbed_versions && data.dubbed_versions[targetLang]
+                      const dubKey = `${data.message_id}_${targetLang}`
+                      
+                      return (
+                        <button 
+                          onClick={() => {
+                            if (hasCurrentLanguageDub) {
+                              playAudio(`dubbed_${dubKey}`)
+                            } else {
+                              requestDub(data.message_id, data.audio_data, data.speaker, data.language)
+                            }
+                          }}
+                          className="text-xs px-2 py-1 rounded-lg bg-blue-900/20 border border-blue-500/30 text-blue-200 hover:text-blue-100 transition-all duration-300 flex items-center gap-1 dub-btn"
+                        >
+                          <img src={`https://api.iconify.design/mdi:${hasCurrentLanguageDub ? 'play' : 'translate'}.svg?color=white`} alt={hasCurrentLanguageDub ? 'Play' : 'Translate'} className="w-3 h-3" />
+                          {hasCurrentLanguageDub ? 'Play' : 'Dub'}
+                        </button>
+                      )
+                    }
                   })()}
                   
                   {/* Add dubbed audio elements for all languages */}
@@ -511,19 +663,23 @@ const ChatRoom = () => {
       <header className="glass-effect px-4 py-3 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center text-xl overflow-hidden">
-              🌍
+            <div 
+              className={`w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center text-xl overflow-hidden ${isBot ? 'cursor-pointer hover:bg-gray-600 transition-colors' : ''}`}
+              onClick={isBot ? () => setShowBotLangModal(true) : undefined}
+              title={isBot ? 'Change bot language' : undefined}
+            >
+              {isBot ? '🤖' : '🌍'}
             </div>
             <div>
               <h2 
-                onClick={copyCircleId}
-                className="text-lg font-bold text-white cursor-pointer hover:text-gray-300 transition-colors"
-                title="Tap to copy Circle ID"
+                onClick={isBot ? undefined : copyCircleId}
+                className={`text-lg font-bold text-white ${isBot ? '' : 'cursor-pointer hover:text-gray-300'} transition-colors`}
+                title={isBot ? 'Chat with Translation Bot' : 'Tap to copy Circle ID'}
               >
-                {roomId}
+                {isBot ? 'Translation Bot Chat' : roomId}
               </h2>
               <p className="text-sm text-gray-400 font-medium">
-                <span>{participantCount}</span> participants
+                {isBot ? 'Translation Bot' : `${participantCount} participants`}
               </p>
             </div>
           </div>
@@ -534,6 +690,7 @@ const ChatRoom = () => {
               onChange={(e) => {
                 const newLang = e.target.value
                 setUserLanguage(newLang)
+                setCircleLanguage(newLang)
                 // Update URL
                 const newUrl = new URL(window.location)
                 newUrl.searchParams.set('language', newLang)
@@ -576,7 +733,7 @@ const ChatRoom = () => {
       <div ref={messagesAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="text-center py-4">
           <div className="inline-block px-6 py-3 rounded-2xl bg-white/10 text-gray-300 text-sm">
-            Welcome to the circle! Start chatting with voice or text.
+            {isBot ? '🤖 Chat with Translation Bot! It translates your messages and provides voice dubbing.' : 'Welcome to the circle! Start chatting with voice or text.'}
           </div>
         </div>
         
@@ -590,9 +747,11 @@ const ChatRoom = () => {
       </div>
 
       {/* Typing Indicator */}
-      <div className="px-4 py-2 text-sm text-gray-400 italic min-h-[2rem]">
-        {typingIndicator}
-      </div>
+      {!isBot && (
+        <div className="px-4 py-2 text-sm text-gray-400 italic min-h-[2rem]">
+          {typingIndicator}
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="glass-effect p-4 border-t border-white/10">
@@ -636,6 +795,52 @@ const ChatRoom = () => {
           </div>
         </div>
       </div>
+
+      {/* Bot Language Modal */}
+      {isBot && (
+        <Modal 
+          isOpen={showBotLangModal}
+          onClose={() => setShowBotLangModal(false)}
+          title="Change Bot Language"
+          titleColor="text-purple-400"
+        >
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Bot's Language</label>
+              <select 
+                value={botLanguage}
+                onChange={(e) => setBotLanguage(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 transition-all duration-300"
+              >
+                <option value="en" className="bg-gray-800 text-white">🇺🇸 English</option>
+                <option value="es" className="bg-gray-800 text-white">🇪🇸 Spanish</option>
+                <option value="fr" className="bg-gray-800 text-white">🇫🇷 French</option>
+                <option value="de" className="bg-gray-800 text-white">🇩🇪 German</option>
+                <option value="ja" className="bg-gray-800 text-white">🇯🇵 Japanese</option>
+                <option value="hi" className="bg-gray-800 text-white">🇮🇳 Hindi</option>
+              </select>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowBotLangModal(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-500 text-gray-300 hover:bg-gray-500/20 transition-all duration-300"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setShowBotLangModal(false)
+                  addStatusMessage(`🤖 Bot language changed to ${botLanguage.toUpperCase()}`)
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -158,6 +158,36 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Bot Chat Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Chat with Bot</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div 
+              className="widget-card rounded-3xl p-6 hover:scale-105 hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+              onClick={() => {
+                const username = localStorage.getItem('userName') || 'User'
+                navigate(`/chat/translationbot-${Date.now()}?username=${username}&language=en&botlang=es&bot=echo`)
+              }}
+            >
+              <div className="flex items-start space-x-4 mb-4">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                  🤖
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-bold text-white mb-1">Translation Bot</h3>
+                  <p className="text-sm text-gray-400">Chat with Translation Bot</p>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm mb-4">Chat with Translation Bot and experience translation features. It translates your messages and provides voice dubbing.</p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400">Translation</span>
+                <span className="px-2 py-1 rounded-lg bg-pink-500/20 text-pink-400">Voice Dubbing</span>
+                <span className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400">AI Responses</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Circles Section */}
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -201,6 +231,8 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+
 
       {/* Join Circle Modal */}
       <Modal 

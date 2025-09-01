@@ -10,7 +10,7 @@ A real-time multilingual chat application that breaks language barriers through 
 - **Multi-language Support**: English, Spanish, French, German, Japanese, Hindi
 - **User Authentication**: Login/signup system with profile management
 - **Circle Management**: Create and join chat circles
-- **Echo Bot**: Test translation features with an AI bot
+- **Translation Bot**: Translates text, provides text-to-speech, and voice dubbing in any supported language
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Tech Stack
@@ -76,7 +76,7 @@ A real-time multilingual chat application that breaks language barriers through 
 2. **Join circles** without account (guest mode)
 3. **Send voice messages** and get them dubbed in other languages
 4. **Translate text messages** to your preferred language
-5. **Test features** with the Echo Bot
+5. **Chat with Translation Bot** - it translates your messages, speaks them aloud, and dubs your voice in any language you set
 
 ## API Integration
 

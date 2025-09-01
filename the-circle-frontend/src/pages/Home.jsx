@@ -198,26 +198,45 @@ const Home = () => {
                 >
                   Start New Circle
                 </button>
+                <button 
+                  onClick={() => {
+                    const username = formData.username || 'Guest'
+                    const language = formData.language || 'en'
+                    navigate(`/chat/echobot-${Date.now()}?username=${username}&language=${language}&botlang=es&bot=echo`)
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  🤖 Chat with Bot
+                </button>
               </div>
             </div>
           </div>
 
           {/* Features Card */}
           <div className="widget-card rounded-3xl p-8">
-            <div className="flex items-center space-x-3 mb-8">
+            <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center">
                 <img src="https://api.iconify.design/mdi:star-outline.svg?color=white" alt="Star" className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Why The Circle?</h2>
+              <h2 className="text-2xl font-bold text-white">Features</h2>
+            </div>
+            
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🤖</span>
+                <span className="text-white font-semibold">Try EchoBot!</span>
+              </div>
+              <p className="text-sm text-gray-300">Test translation and voice dubbing features with our AI assistant. No account needed!</p>
             </div>
             
             <div className="space-y-4">
               {[
                 { icon: 'mdi:chat', text: 'Instant text chat' },
                 { icon: 'mdi:microphone', text: 'Voice messaging' },
-                { icon: 'mdi:lock', text: 'Secure & private conversations' },
-                { icon: 'mdi:devices', text: 'Works on any device' },
-                { icon: 'mdi:translate', text: 'Multi-language support' }
+                { icon: 'mdi:robot', text: 'AI bot for testing features' },
+                { icon: 'mdi:translate', text: 'Multi-language support' },
+                { icon: 'mdi:volume-high', text: 'Voice dubbing & translation' },
+                { icon: 'mdi:devices', text: 'Works on any device' }
               ].map((feature, index) => (
                 <div key={index} className="flex items-center space-x-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-700/50 transition-colors duration-300">
                   <div className="w-10 h-10 rounded-xl bg-gray-700 flex items-center justify-center">
@@ -337,6 +356,8 @@ const Home = () => {
           </p>
         </div>
       </Modal>
+
+
     </div>
   )
 }
