@@ -2,6 +2,14 @@
 
 A real-time multilingual chat application that breaks language barriers through voice and text translation.
 
+## Screenshots
+
+![](screenshots/Screenshot%20(366).png)
+
+![](screenshots/Screenshot%20(367).png)
+
+![](screenshots/Screenshot%20(364).png)
+
 ## Features
 
 - **Real-time Chat**: Instant text and voice messaging
