@@ -755,7 +755,22 @@ const ChatRoom = () => {
       <div ref={messagesAreaRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="text-center py-4">
           <div className="inline-block px-6 py-3 rounded-2xl bg-white/10 text-gray-300 text-sm">
-            {isBot ? '🤖 Chat with Translation Bot! It translates your messages and provides voice dubbing.' : 'Welcome to the circle! Start chatting with voice or text.'}
+            {isBot ? (
+              <>
+                🤖 Chat with Translation Bot! It translates your messages and provides voice dubbing.
+                <br />
+                <span className="text-xs text-gray-400 mt-1 inline-block">
+                  Bot Language: {{
+                    'en': '🇺🇸 English',
+                    'es': '🇪🇸 Spanish', 
+                    'fr': '🇫🇷 French',
+                    'de': '🇩🇪 German',
+                    'ja': '🇯🇵 Japanese',
+                    'hi': '🇮🇳 Hindi'
+                  }[botLanguage] || botLanguage.toUpperCase()}
+                </span>
+              </>
+            ) : 'Welcome to the circle! Start chatting with voice or text.'}
           </div>
         </div>
         
