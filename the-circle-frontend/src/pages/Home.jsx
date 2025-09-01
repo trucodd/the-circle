@@ -126,75 +126,95 @@ const Home = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <div className="widget-card rounded-3xl p-12 mb-8">
-            <h1 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
-              Join a Circle
-            </h1>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto font-normal">
-              People from anywhere. Thoughts in every language. One circle.
-            </p>
+          <div className="widget-card rounded-3xl p-12 mb-8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-accent-cyan/5 to-blue-500/5"></div>
+            <div className="relative z-10">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent-cyan to-blue-500 flex items-center justify-center mx-auto mb-6">
+                <img src="https://api.iconify.design/mdi:earth.svg?color=white" alt="Earth" className="w-10 h-10" />
+              </div>
+              <h1 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
+                Join a Circle
+              </h1>
+              <p className="text-xl text-gray-400 max-w-2xl mx-auto font-normal">
+                People from anywhere. Thoughts in every language. One circle.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Main Cards Grid */}
         <div className="grid lg:grid-cols-2 gap-8 mb-16">
           {/* Quick Join Card */}
-          <div className="widget-card rounded-3xl p-8">
-            <div className="flex items-center space-x-3 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center">
-                <img src="https://api.iconify.design/mdi:lightning-bolt.svg?color=white" alt="Lightning" className="w-6 h-6" />
+          <div className="widget-card rounded-3xl p-8 h-fit">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-accent-cyan to-blue-500 flex items-center justify-center mx-auto mb-4">
+                <img src="https://api.iconify.design/mdi:lightning-bolt.svg?color=white" alt="Lightning" className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Quick Join</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Quick Join</h2>
+              <p className="text-gray-400 text-sm">Jump into a circle instantly</p>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Your Name</label>
                 <input 
                   type="text" 
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  placeholder="Your Name" 
+                  placeholder="Enter your name" 
                   required 
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 focus:bg-white/10 transition-all duration-300"
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
                 <select 
                   name="language"
                   value={formData.language}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 focus:bg-white/10 transition-all duration-300"
                 >
-                  <option value="en" className="bg-dark-card">English</option>
-                  <option value="es" className="bg-dark-card">Spanish</option>
-                  <option value="fr" className="bg-dark-card">French</option>
-                  <option value="ja" className="bg-dark-card">Japanese</option>
-                  <option value="hi" className="bg-dark-card">Hindi</option>
+                  <option value="en" className="bg-gray-800 text-white">🇺🇸 English</option>
+                  <option value="es" className="bg-gray-800 text-white">🇪🇸 Spanish</option>
+                  <option value="fr" className="bg-gray-800 text-white">🇫🇷 French</option>
+                  <option value="ja" className="bg-gray-800 text-white">🇯🇵 Japanese</option>
+                  <option value="hi" className="bg-gray-800 text-white">🇮🇳 Hindi</option>
                 </select>
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Circle ID</label>
                 <input 
                   type="text" 
                   name="roomId"
                   value={formData.roomId}
                   onChange={handleInputChange}
-                  placeholder="Circle ID" 
+                  placeholder="circle-abc123" 
                   required 
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300"
+                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 focus:bg-white/10 transition-all duration-300"
                 />
               </div>
               
-              <div className="space-y-3 pt-4">
+              <div className="space-y-3 pt-6">
                 <button 
                   onClick={handleJoinCircle}
-                  className="w-full py-3 rounded-xl bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-all duration-300"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-bold hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-lg"
                 >
                   Join Circle
                 </button>
+                
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-gray-900 text-gray-400">or</span>
+                  </div>
+                </div>
+                
                 <button 
                   onClick={handleStartCircle}
-                  className="w-full py-3 rounded-xl bg-gray-600 text-white font-semibold hover:bg-gray-500 transition-all duration-300"
+                  className="w-full py-3 rounded-xl border border-gray-600 text-gray-300 font-semibold hover:bg-gray-800 hover:border-gray-500 transition-all duration-300"
                 >
                   Start New Circle
                 </button>
@@ -202,38 +222,40 @@ const Home = () => {
                   onClick={() => {
                     const username = formData.username || 'Guest'
                     const language = formData.language || 'en'
-                    navigate(`/chat/echobot-${Date.now()}?username=${username}&language=${language}&botlang=es&bot=echo`)
+                    navigate(`/chat/translationbot-${Date.now()}?username=${username}&language=${language}&botlang=es&bot=echo`)
                   }}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-accent-cyan/20 to-blue-500/20 border border-accent-cyan/30 text-white font-semibold hover:from-accent-cyan/30 hover:to-blue-500/30 hover:border-accent-cyan/40 transition-all duration-300 flex items-center justify-center gap-2"
                 >
-                  🤖 Chat with Bot
+                  <img src="https://api.iconify.design/mdi:robot.svg?color=white" alt="Bot" className="w-5 h-5" />
+                  Chat with Translation Bot
                 </button>
               </div>
             </div>
           </div>
 
           {/* Features Card */}
-          <div className="widget-card rounded-3xl p-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center">
-                <img src="https://api.iconify.design/mdi:star-outline.svg?color=white" alt="Star" className="w-6 h-6" />
+          <div className="widget-card rounded-3xl p-8 h-fit">
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-accent-cyan to-blue-500 flex items-center justify-center mx-auto mb-4">
+                <img src="https://api.iconify.design/mdi:star-outline.svg?color=white" alt="Star" className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-white">Features</h2>
+              <h2 className="text-3xl font-bold text-white mb-2">Features</h2>
+              <p className="text-gray-400 text-sm">Everything you need to connect</p>
             </div>
             
-            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+            <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-accent-cyan/20 to-blue-500/20 border border-accent-cyan/30">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">🤖</span>
-                <span className="text-white font-semibold">Try EchoBot!</span>
+                <img src="https://api.iconify.design/mdi:robot.svg?color=white" alt="Bot" className="w-6 h-6" />
+                <span className="text-white font-semibold">Try Translation Bot!</span>
               </div>
-              <p className="text-sm text-gray-300">Test translation and voice dubbing features with our AI assistant. No account needed!</p>
+              <p className="text-sm text-gray-300">Chat with our translation bot that translates your messages, provides text-to-speech, and voice dubbing. No account needed!</p>
             </div>
             
             <div className="space-y-4">
               {[
                 { icon: 'mdi:chat', text: 'Instant text chat' },
                 { icon: 'mdi:microphone', text: 'Voice messaging' },
-                { icon: 'mdi:robot', text: 'AI bot for testing features' },
+                { icon: 'mdi:robot', text: 'Translation bot with TTS & dubbing' },
                 { icon: 'mdi:translate', text: 'Multi-language support' },
                 { icon: 'mdi:volume-high', text: 'Voice dubbing & translation' },
                 { icon: 'mdi:devices', text: 'Works on any device' }
@@ -337,7 +359,7 @@ const Home = () => {
           
           <button 
             onClick={handleRegister}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-accent-pink to-accent-purple text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
           >
             Sign Up
           </button>
