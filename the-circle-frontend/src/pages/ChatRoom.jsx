@@ -30,17 +30,34 @@ const ChatRoom = () => {
   const [isTyping, setIsTyping] = useState(false)
   const [circleIdText, setCircleIdText] = useState('')
   const [circleName, setCircleName] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
+  const [showCircleEditModal, setShowCircleEditModal] = useState(false)
+  const [circleEditData, setCircleEditData] = useState({
+    name: '',
+    description: '',
+    image: null,
+    color: '#64ffda',
+    emoji: '🌍'
+  })
   
   const messagesAreaRef = useRef(null)
   const typingTimerRef = useRef(null)
 
   useEffect(() => {
-    // Get circle name from localStorage or generate one
+    // Get circle info from localStorage
     if (!isBot) {
       const joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
       const currentRoom = joinedRooms.find(room => room.id === roomId)
-      if (currentRoom && currentRoom.name) {
-        setCircleName(currentRoom.name)
+      if (currentRoom) {
+        setCircleName(currentRoom.name || `Circle ${roomId.split('-')[1] || roomId}`)
+        setIsOwner(currentRoom.isOwner || false)
+        setCircleEditData({
+          name: currentRoom.name || '',
+          description: currentRoom.description || '',
+          image: currentRoom.image || null,
+          color: currentRoom.color || '#64ffda',
+          emoji: currentRoom.emoji || '🌍'
+        })
       } else {
         setCircleName(`Circle ${roomId.split('-')[1] || roomId}`)
       }
@@ -678,14 +695,32 @@ const ChatRoom = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div 
-              className={`w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center text-xl overflow-hidden ${isBot ? 'cursor-pointer hover:bg-gray-600 transition-colors' : ''}`}
-              onClick={isBot ? () => setShowBotLangModal(true) : undefined}
-              title={isBot ? 'Change bot language' : undefined}
+              className={`w-12 h-12 rounded-2xl bg-gray-700 flex items-center justify-center text-xl overflow-hidden ${isBot || isOwner ? 'cursor-pointer hover:bg-gray-600 transition-colors' : ''}`}
+              onClick={() => {
+                if (isBot) {
+                  setShowBotLangModal(true)
+                } else if (isOwner) {
+                  setShowCircleEditModal(true)
+                }
+              }}
+              title={isBot ? 'Change bot language' : isOwner ? 'Edit circle details' : undefined}
             >
-              {isBot ? '🤖' : '🌍'}
+              {isBot ? '🤖' : (circleEditData.image ? (
+                <img src={circleEditData.image} alt="Circle" className="w-full h-full object-cover rounded-2xl" />
+              ) : (
+                <img src={circleEditData.emoji} alt="Circle" className="w-6 h-6" />
+              ))}
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">
+              <h2 
+                className={`text-lg font-bold text-white ${isOwner && !isBot ? 'cursor-pointer hover:text-gray-300 transition-colors' : ''}`}
+                onClick={() => {
+                  if (isOwner && !isBot) {
+                    setShowCircleEditModal(true)
+                  }
+                }}
+                title={isOwner && !isBot ? 'Click to edit circle details' : undefined}
+              >
                 {isBot ? 'Translation Bot' : circleName}
               </h2>
               <p className="text-sm text-gray-400 font-medium">
@@ -884,6 +919,89 @@ const ChatRoom = () => {
                   addStatusMessage(`🤖 Bot language changed to ${botLanguage.toUpperCase()}`)
                 }}
                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Circle Edit Modal */}
+      {isOwner && (
+        <Modal 
+          isOpen={showCircleEditModal}
+          onClose={() => setShowCircleEditModal(false)}
+          title="Edit Circle"
+          titleColor="text-accent-cyan"
+        >
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Circle Name</label>
+              <input 
+                type="text" 
+                value={circleEditData.name}
+                onChange={(e) => setCircleEditData({...circleEditData, name: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300"
+                placeholder="Enter circle name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
+              <textarea 
+                value={circleEditData.description}
+                onChange={(e) => setCircleEditData({...circleEditData, description: e.target.value})}
+                rows="3"
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/20 transition-all duration-300 resize-none"
+                placeholder="What's your circle about?"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => setShowCircleEditModal(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-500 text-gray-300 hover:bg-gray-500/20 transition-all duration-300"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={async () => {
+                  try {
+                    // Update backend
+                    await fetch(`http://localhost:5000/api/circles/${roomId}`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        name: circleEditData.name,
+                        description: circleEditData.description,
+                        image: circleEditData.image,
+                        color: circleEditData.color,
+                        emoji: circleEditData.emoji
+                      })
+                    })
+                    
+                    // Update localStorage
+                    let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
+                    joinedRooms = joinedRooms.map(room => 
+                      room.id === roomId 
+                        ? { ...room, name: circleEditData.name, description: circleEditData.description }
+                        : room
+                    )
+                    localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms))
+                    
+                    // Update UI
+                    setCircleName(circleEditData.name)
+                    setShowCircleEditModal(false)
+                    addStatusMessage('✅ Circle updated successfully')
+                  } catch (error) {
+                    console.error('Error updating circle:', error)
+                    addStatusMessage('❌ Failed to update circle')
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
               >
                 Update
               </button>
