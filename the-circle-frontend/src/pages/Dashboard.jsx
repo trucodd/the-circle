@@ -195,7 +195,7 @@ const Dashboard = () => {
             <div className="flex space-x-3">
               <button 
                 onClick={() => navigate('/create-circle')}
-                className="px-6 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all duration-200"
+                className="px-6 py-2 rounded-full bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
               >
                 Create Circle
               </button>
