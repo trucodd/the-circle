@@ -887,7 +887,7 @@ const ChatRoom = () => {
           isOpen={showBotLangModal}
           onClose={() => setShowBotLangModal(false)}
           title="Change Bot Language"
-          titleColor="text-purple-400"
+          titleColor="text-accent-cyan"
         >
           <div className="space-y-6">
             <div>
@@ -918,7 +918,7 @@ const ChatRoom = () => {
                   setShowBotLangModal(false)
                   addStatusMessage(`🤖 Bot language changed to ${botLanguage.toUpperCase()}`)
                 }}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-blue-500 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
               >
                 Update
               </button>

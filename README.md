@@ -2,7 +2,7 @@
 
 A real-time multilingual chat application that breaks language barriers through voice and text translation.
 
-## Screenshots
+## Updated ui
 
 ![](screenshots/Screenshot%20(366).png)
 
