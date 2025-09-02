@@ -17,12 +17,37 @@ const Dashboard = () => {
     loadRooms()
   }, [navigate])
 
-  const loadRooms = () => {
+  const loadRooms = async () => {
     const rooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
-    setJoinedRooms(rooms)
+    
+    // Update circle info for non-owner circles
+    const updatedRooms = await Promise.all(rooms.map(async (room) => {
+      if (!room.isOwner && !room.isDM && room.id.startsWith('circle-')) {
+        try {
+          const response = await fetch(`http://localhost:5000/api/circles/${room.id}`)
+          const circleInfo = await response.json()
+          return {
+            ...room,
+            name: circleInfo.name,
+            description: circleInfo.description,
+            image: circleInfo.image,
+            color: circleInfo.color,
+            emoji: circleInfo.emoji
+          }
+        } catch (error) {
+          console.error('Error fetching circle info:', error)
+          return room
+        }
+      }
+      return room
+    }))
+    
+    // Update localStorage with new info
+    localStorage.setItem('joinedRooms', JSON.stringify(updatedRooms))
+    setJoinedRooms(updatedRooms)
   }
 
-  const handleJoinCircle = () => {
+  const handleJoinCircle = async () => {
     if (!circleIdInput.trim()) {
       alert('Please enter a Circle ID')
       return
@@ -35,19 +60,42 @@ const Dashboard = () => {
     const existingRoom = rooms.find(room => room.id === circleIdInput)
     
     if (!existingRoom) {
-      const newRoom = {
-        id: circleIdInput,
-        name: `Circle ${circleIdInput.split('-')[1]}`,
-        description: '',
-        language: userLanguage,
-        color: '#64ffda',
-        emoji: '🌍',
-        joinedAt: Date.now(),
-        isOwner: false
+      try {
+        // Fetch circle info from backend
+        const response = await fetch(`http://localhost:5000/api/circles/${circleIdInput}`)
+        const circleInfo = await response.json()
+        
+        const newRoom = {
+          id: circleIdInput,
+          name: circleInfo.name,
+          description: circleInfo.description,
+          language: userLanguage,
+          image: circleInfo.image,
+          color: circleInfo.color,
+          emoji: circleInfo.emoji,
+          joinedAt: Date.now(),
+          isOwner: false
+        }
+        rooms.push(newRoom)
+        localStorage.setItem('joinedRooms', JSON.stringify(rooms))
+        setJoinedRooms(rooms)
+      } catch (error) {
+        console.error('Error fetching circle info:', error)
+        // Fallback to default values if API fails
+        const newRoom = {
+          id: circleIdInput,
+          name: `Circle ${circleIdInput.split('-')[1]}`,
+          description: '',
+          language: userLanguage,
+          color: '#64ffda',
+          emoji: '🌍',
+          joinedAt: Date.now(),
+          isOwner: false
+        }
+        rooms.push(newRoom)
+        localStorage.setItem('joinedRooms', JSON.stringify(rooms))
+        setJoinedRooms(rooms)
       }
-      rooms.push(newRoom)
-      localStorage.setItem('joinedRooms', JSON.stringify(rooms))
-      setJoinedRooms(rooms)
     }
     
     setShowJoinModal(false)

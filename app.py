@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import json
 import uuid
 from datetime import datetime
-from models import db, User, ChatMessage
+from models import db, User, ChatMessage, Circle
 
 load_dotenv()
 
@@ -140,14 +140,68 @@ def serve_react_app(path):
 def health_check():
     return jsonify({'status': 'ok', 'message': 'Backend is running'})
 
-@app.route('/api/rooms/<room_id>')
-def get_room_info(room_id):
-    return jsonify({
-        'id': room_id,
-        'name': f"Circle {room_id.split('-')[-1]}",
-        'color': '#64ffda',
-        'emoji': '🌍'
-    })
+@app.route('/api/circles', methods=['POST'])
+def create_circle():
+    data = request.get_json()
+    
+    with app.app_context():
+        circle = Circle(
+            id=data['id'],
+            name=data['name'],
+            description=data.get('description', ''),
+            image=data.get('image'),
+            color=data.get('color'),
+            emoji=data.get('emoji'),
+            owner_username=data['owner_username']
+        )
+        db.session.add(circle)
+        db.session.commit()
+    
+    return jsonify({'success': True})
+
+@app.route('/api/circles/<circle_id>')
+def get_circle_info(circle_id):
+    with app.app_context():
+        circle = Circle.query.filter_by(id=circle_id).first()
+        if circle:
+            return jsonify({
+                'id': circle.id,
+                'name': circle.name,
+                'description': circle.description,
+                'image': circle.image,
+                'color': circle.color,
+                'emoji': circle.emoji,
+                'owner_username': circle.owner_username,
+                'created_at': circle.created_at.isoformat()
+            })
+        else:
+            return jsonify({
+                'id': circle_id,
+                'name': f"Circle {circle_id.split('-')[-1]}",
+                'description': '',
+                'image': None,
+                'color': '#64ffda',
+                'emoji': '🌍',
+                'owner_username': None,
+                'created_at': None
+            })
+
+@app.route('/api/circles/<circle_id>', methods=['PUT'])
+def update_circle(circle_id):
+    data = request.get_json()
+    
+    with app.app_context():
+        circle = Circle.query.filter_by(id=circle_id).first()
+        if circle:
+            circle.name = data.get('name', circle.name)
+            circle.description = data.get('description', circle.description)
+            circle.image = data.get('image', circle.image)
+            circle.color = data.get('color', circle.color)
+            circle.emoji = data.get('emoji', circle.emoji)
+            db.session.commit()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'error': 'Circle not found'}), 404
 
 @socketio.on('join_circle')
 def handle_join_circle(data):

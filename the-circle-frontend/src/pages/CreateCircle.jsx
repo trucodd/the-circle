@@ -50,7 +50,7 @@ const CreateCircle = () => {
     setFormData({ ...formData, circleId: newId })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     if (!formData.circleName) {
@@ -58,24 +58,45 @@ const CreateCircle = () => {
       return
     }
     
+    const userName = localStorage.getItem('userName') || 'User'
+    
     const circleData = {
       id: formData.circleId,
       name: formData.circleName,
       description: formData.circleDescription,
-      language: 'multi',
       image: uploadedImage,
       color: uploadedImage ? null : selectedColor,
       emoji: uploadedImage ? null : selectedEmoji,
-      createdAt: new Date().toISOString(),
-      isOwner: true
+      owner_username: userName
     }
     
-    let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
-    joinedRooms.push(circleData)
-    localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms))
-    
-    const userName = localStorage.getItem('userName') || 'User'
-    navigate(`/chat/${formData.circleId}?username=${userName}&language=en`)
+    try {
+      // Save to backend
+      await fetch('http://localhost:5000/api/circles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(circleData)
+      })
+      
+      // Save to localStorage for dashboard
+      const localCircleData = {
+        ...circleData,
+        language: 'multi',
+        createdAt: new Date().toISOString(),
+        isOwner: true
+      }
+      
+      let joinedRooms = JSON.parse(localStorage.getItem('joinedRooms') || '[]')
+      joinedRooms.push(localCircleData)
+      localStorage.setItem('joinedRooms', JSON.stringify(joinedRooms))
+      
+      navigate(`/chat/${formData.circleId}?username=${userName}&language=en`)
+    } catch (error) {
+      console.error('Error creating circle:', error)
+      alert('Failed to create circle. Please try again.')
+    }
   }
 
   return (
