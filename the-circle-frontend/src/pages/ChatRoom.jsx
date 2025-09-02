@@ -328,31 +328,7 @@ const ChatRoom = () => {
     }
   }
 
-  const speakText = (text, language) => {
-    if ('speechSynthesis' in window) {
-      try {
-        // Stop any ongoing speech
-        speechSynthesis.cancel()
-        
-        const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : language === 'fr' ? 'fr-FR' : language === 'de' ? 'de-DE' : language === 'ja' ? 'ja-JP' : language === 'hi' ? 'hi-IN' : 'en-US'
-        utterance.rate = 0.9
-        utterance.pitch = 1
-        utterance.volume = 0.8
-        
-        utterance.onerror = (event) => {
-          console.error('Speech synthesis error:', event)
-        }
-        
-        speechSynthesis.speak(utterance)
-      } catch (error) {
-        console.error('Text-to-speech failed:', error)
-        alert('Text-to-speech is not available in your browser')
-      }
-    } else {
-      alert('Text-to-speech is not supported in your browser')
-    }
-  }
+
 
   const translateMessage = async (messageId, text, sourceLanguage) => {
     if (isBot) {
@@ -531,17 +507,7 @@ const ChatRoom = () => {
                 </button>
               </div>
             )}
-            {isBotMessage && (
-              <div className="mt-2 flex items-center gap-2">
-                <button 
-                  onClick={() => speakText(message.message, message.language)}
-                  className="text-xs px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white transition-all duration-300 flex items-center gap-1"
-                >
-                  <img src="https://api.iconify.design/mdi:volume-high.svg?color=white" alt="Speak" className="w-3 h-3" />
-                  Listen
-                </button>
-              </div>
-            )}
+
 
             <div className="text-xs text-gray-400 mt-1">{time}</div>
           </div>
