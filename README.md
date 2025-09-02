@@ -10,6 +10,16 @@ A real-time multilingual chat application that breaks language barriers through 
 
 ![](screenshots/Screenshot%20(364).png)
 
+![](screenshots/Screenshot%20(384).png)
+
+![](screenshots/Screenshot%20(376).png)
+
+![](screenshots/Screenshot%20(352).png)
+
+![](screenshots/Screenshot%20(388).png)
+
+
+
 ## Features
 
 - **Real-time Chat**: Instant text and voice messaging
