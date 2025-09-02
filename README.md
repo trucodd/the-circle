@@ -28,7 +28,7 @@ A real-time multilingual chat application that breaks language barriers through 
 - **Multi-language Support**: English, Spanish, French, German, Japanese, Hindi
 - **User Authentication**: Login/signup system with profile management
 - **Circle Management**: Create and join chat circles
-- **Translation Bot**: Translates text, provides text-to-speech, and voice dubbing in any supported language
+- **Translation Bot**: Translates text and voice dubbing in any supported language
 - **Responsive Design**: Works on desktop and mobile devices
 
 ## Tech Stack
@@ -99,6 +99,8 @@ A real-time multilingual chat application that breaks language barriers through 
 ## API Integration
 
 This application uses the **Murf Dubbing API** for high-quality voice translation and dubbing capabilities. The API provides natural-sounding voice synthesis in multiple languages.
+
+> **Note**: Text-to-Speech (TTS) feature will be added soon using Murf API key for enhanced voice capabilities.
 
 ---
 
